@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1688ff">
+<title>Zeiterfassung</title>
+<style>
+:root{--bg:#2f2f2f;--side:#22252b;--card:#3b3b3b;--card2:#26282d;--line:#4a4a4a;--txt:#eee;--mut:#9a9a9a;--acc:#1688ff;--ok:#7ed321;--bad:#ff5a5a;--warn:#f5a623}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:var(--txt);background:#1e1f23;border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
+.app{display:flex;height:100%}
+nav{width:220px;background:var(--side);padding:18px 8px;display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+nav .logo{width:40px;height:40px;border-radius:10px;background:var(--acc);display:grid;place-items:center;font-weight:800;font-size:20px;margin:0 auto 22px}
+nav button{background:none;border:0;text-align:left;padding:10px 14px;border-radius:20px;color:#bbb;display:flex;gap:10px;align-items:center}
+nav button.on{background:#2c3a4f;color:var(--acc)}
+main{flex:1;overflow:auto;padding:0}
+.top{position:sticky;top:0;z-index:5;background:var(--side);padding:12px 16px;display:flex;align-items:center;gap:10px}
+.top h1{font-size:20px;margin:0;flex:1}
+.btn{background:none;border:1px solid var(--acc);color:var(--acc);border-radius:18px;padding:6px 14px}
+.btn.fill{background:var(--acc);color:#fff}
+.btn.red{border-color:var(--bad);color:var(--bad)}
+.icon{background:none;border:0;font-size:20px;padding:4px 8px}
+.wrap{max-width:720px;margin:0 auto;padding:16px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;background:var(--side);padding:4px 8px 12px}
+.week .d{font-size:12px;color:var(--mut)}
+.week button{background:none;border:0;width:36px;height:36px;border-radius:50%;margin:4px auto 0;display:block;font-weight:600}
+.week button.sel{background:var(--acc)}
+.week button.today:not(.sel){outline:1px solid var(--acc)}
+.week .dot{width:5px;height:5px;border-radius:50%;background:#888;margin:3px auto 0}
+.week .sun{color:#ff6b6b}
+.daylbl{color:var(--mut);font-size:13px;font-weight:600;margin:16px 4px 6px;display:flex;justify-content:space-between}
+.entry{background:var(--card);border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;border-left:4px solid var(--acc)}
+.entry.Urlaub{border-left-color:var(--warn)} .entry.Krankheit{border-left-color:var(--bad)}
+.entry small{color:var(--mut)}
+.entry b.h{font-size:16px}
+.entry .note{font-size:13px;color:#ddd;margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
+.entry>div:first-child{min-width:0;flex:1;margin-right:10px}
+.card{background:var(--card2);border-radius:10px;padding:16px;margin-bottom:14px}
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;gap:8px}
+.kpi .l{font-size:11px;color:var(--mut);letter-spacing:.05em}
+.kpi .v{font-size:22px;font-weight:700}
+.pos{color:var(--ok)} .neg{color:var(--bad)}
+.month{background:var(--card);border-radius:6px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;cursor:pointer}
+.month span{color:var(--mut);font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:11px;color:var(--mut);text-align:left;font-weight:600;padding:4px}
+td{padding:6px 4px;border-top:1px solid #333}
+td.r,th.r{text-align:right}
+.row{display:flex;gap:10px;margin-bottom:12px}.row>*{flex:1}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:4px}
+.seg{display:flex;gap:6px;margin-bottom:14px}.seg button{flex:1;border:1px solid var(--line);background:none;border-radius:8px;padding:8px}.seg button.on{background:var(--acc);border-color:var(--acc)}
+dialog{background:var(--card2);color:var(--txt);border:0;border-radius:14px;padding:20px;width:min(440px,94vw)}
+dialog::backdrop{background:#0009}
+.set{background:#1d1e22;border-radius:10px;margin-bottom:18px;overflow:hidden}
+.set>div{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #2c2c2c;gap:10px}
+.set>div:last-child{border:0}
+.set input{width:140px;text-align:right}
+h3{font-size:13px;color:var(--mut);font-weight:600;margin:18px 4px 8px}
+.bar{height:8px;border-radius:4px;background:#444;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
+.muted{color:var(--mut)}
+@media (max-width:760px){
+  .app{flex-direction:column-reverse}
+  nav{width:auto;flex-direction:row;justify-content:space-around;padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
+  nav .logo{display:none}
+  nav button{flex-direction:column;gap:2px;font-size:11px;padding:6px 10px}
+  .wrap{padding:12px}
+}
+@media print{
+  nav,.top .btn,.top .icon,.noprint{display:none!important}
+  body,main,.card,.entry{background:#fff!important;color:#000!important}
+  .top{background:#fff;position:static}
+  td{border-color:#ccc}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav>
+    <div class="logo">Z</div>
+    <button data-v="zeit">🕒 <span>Zeiterfassung</span></button>
+    <button data-v="profil">👤 <span>Profil</span></button>
+    <button data-v="einst">⚙️ <span>Einstellungen</span></button>
+  </nav>
+  <main id="main"></main>
+</div>
+
+<dialog id="dlg"><form method="dialog" id="dlgForm"></form></dialog>
+<input type="file" id="fileIn" accept=".json,application/json" hidden>
+
+<script id="seed" type="application/json">null</script>
+<script>
+// ---------- Daten ----------
+const KEY='zeiterfassung.v1';
+const DEFAULT_SETTINGS={name:'',company:'',rates:[{from:'2000-01-01',rate:22}],dailySoll:4.98,workdays:[1,2,3,4,5,6],defaultStart:'06:00',defaultEnd:'21:00',defaultPause:0,holidayState:'NI',holidays:[],vacationPerYear:0,vacationCarry:{},overtimeStart:0,startDate:''};
+let DB;
+function load(){
+  try{const s=localStorage.getItem(KEY); if(s){DB=JSON.parse(s);}}catch(e){}
+  let seed=null; try{seed=JSON.parse(document.getElementById('seed').textContent);}catch(e){}
+  if(!DB) DB=seed;
+  else if(seed&&seed.meta&&(seed.meta.version||0)>((DB.meta||{}).version||0)){
+    // Neuere mitgelieferte Daten: fehlende Beschreibungen in vorhandene Einträge übernehmen (nichts überschreiben)
+    const byId={}; seed.entries.forEach(e=>byId[e.id]=e);
+    DB.entries.forEach(e=>{const s=byId[e.id]; if(s&&s.note&&!e.note) e.note=s.note;});
+    DB.meta={...(DB.meta||{}),version:seed.meta.version};
+  }
+  if(!DB||!DB.entries) DB={settings:{},entries:[]};
+  DB.settings={...DEFAULT_SETTINGS,...DB.settings};
+  save();
+}
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){alert('Speichern fehlgeschlagen: '+e)} }
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+// ---------- Hilfen ----------
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parseIso=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const MON=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const WD=['So','Mo','Di','Mi','Do','Fr','Sa'];
+const fmt=(n,d=2)=>(Math.round(n*100)/100).toLocaleString('de-DE',{maximumFractionDigits:d});
+const eur=n=>n.toLocaleString('de-DE',{style:'currency',currency:'EUR'});
+const dlbl=s=>{const d=parseIso(s);return WD[d.getDay()]+'. '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()};
+const toMin=t=>{const[h,m]=t.split(':').map(Number);return h*60+m};
+function hours(e){
+  if(e.type!=='Arbeit') return e.hours!=null?e.hours:DB.settings.dailySoll;
+  let m=toMin(e.end)-toMin(e.start); if(m<0)m+=1440;
+  return (m-(+e.pause||0))/60;
+}
+function pauseLbl(p){p=+p||0;if(!p)return'';return p%60===0?(p/60)+' Std.':p>60?Math.floor(p/60)+' Std. '+(p%60)+' Min.':p+' Min.'}
+// Stundenlohn zum Datum (Lohnverlauf)
+function rateFor(s){const r=(DB.settings.rates||[]).slice().sort((a,b)=>a.from.localeCompare(b.from));let v=r.length?r[0].rate:0;r.forEach(x=>{if(x.from<=s)v=x.rate});return +v}
+// Gesetzliche Feiertage (Niedersachsen) + eigene Feiertage
+function easter(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=(h+l-7*m+114)%31+1;return new Date(y,mo-1,da)}
+const _hol={};
+function holidaysOf(y){
+  const key=y+'|'+DB.settings.holidayState; if(_hol[key]) return _hol[key];
+  const r={}; if(DB.settings.holidayState==='NI'){
+    const e=easter(y),off=n=>{const d=new Date(e);d.setDate(d.getDate()+n);return iso(d)};
+    Object.assign(r,{[y+'-01-01']:'Neujahr',[off(-2)]:'Karfreitag',[off(1)]:'Ostermontag',[y+'-05-01']:'Tag der Arbeit',[off(39)]:'Christi Himmelfahrt',[off(50)]:'Pfingstmontag',[y+'-10-03']:'Tag der Deutschen Einheit',[y+'-10-31']:'Reformationstag',[y+'-12-25']:'1. Weihnachtsfeiertag',[y+'-12-26']:'2. Weihnachtsfeiertag'});
+  }
+  return _hol[key]=r;
+}
+const isHoliday=s=>holidaysOf(+s.slice(0,4))[s]||(DB.settings.holidays.find(h=>h.date===s)||{}).name||'';
+function isWorkday(d){return DB.settings.workdays.includes(d.getDay())&&!isHoliday(iso(d))}
+const LOHN_ORDER=['Zeitlohn','Urlaubslohn','Krankheitslohn','Feiertagslohn'];
+function monthStats(y,m){
+  const from=iso(new Date(y,m,1)), to=iso(new Date(y,m+1,0));
+  const list=DB.entries.filter(e=>e.date>=from&&e.date<=to);
+  let soll=0; const st=DB.settings.startDate, ds=DB.settings.dailySoll;
+  const lohn={}; const add=(k,h,s)=>{const key=k+'|'+rateFor(s);lohn[key]=(lohn[key]||0)+h};
+  const feiertage=[];
+  for(let d=new Date(y,m,1);d.getMonth()===m;d.setDate(d.getDate()+1)){
+    const s=iso(d); if((st&&s<st)||!DB.settings.workdays.includes(d.getDay())) continue;
+    soll+=ds;
+    // Feiertag auf Arbeitstag ohne Eintrag: wird bezahlt gutgeschrieben (wie bei ACHIM "Feiertagslohn")
+    if(isHoliday(s) && !list.some(e=>e.date===s)){ add('Feiertagslohn',ds,s); feiertage.push(s); }
+  }
+  const KIND={Arbeit:'Zeitlohn',Urlaub:'Urlaubslohn',Krankheit:'Krankheitslohn'};
+  list.forEach(e=>add(KIND[e.type],hours(e),e.date));
+  const r2=n=>Math.round(n*100)/100;
+  const rows=Object.entries(lohn).map(([k,h])=>{const[name,rate]=k.split('|');return{name,rate:+rate,h:r2(h),betrag:r2(r2(h)*rate)}})
+    .sort((a,b)=>LOHN_ORDER.indexOf(a.name)-LOHN_ORDER.indexOf(b.name)||a.rate-b.rate);
+  const ist=rows.reduce((a,r)=>a+r.h,0);
+  const work=list.filter(e=>e.type==='Arbeit').reduce((a,e)=>a+hours(e),0);
+  return {list,rows,feiertage,soll:r2(soll),ist:r2(ist),work,diff:r2(ist-soll),brutto:r2(rows.reduce((a,r)=>a+r.betrag,0)),
+    urlaub:new Set(list.filter(e=>e.type==='Urlaub').map(e=>e.date)).size,krank:new Set(list.filter(e=>e.type==='Krankheit').map(e=>e.date)).size};
+}
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ---------- Ansichten ----------
+let view='zeit', selDate=iso(new Date()), monthOpen=null, sub=null;
+const M=document.getElementById('main');
+function go(v){view=v;monthOpen=null;sub=null;render();}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
+
+function render(){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
+  if(view==='zeit') return vZeit();
+  if(view==='profil') return monthOpen?vMonat():sub?vSub():vProfil();
+  if(view==='einst') return vEinst();
+}
+
+function entryHtml(e){
+  const h=hours(e);
+  let line = e.type==='Arbeit' ? `${e.start} – ${e.end}${e.pause?' · Pause '+pauseLbl(e.pause):''}` : (e.reason||'Ganzer Tag');
+  return `<div class="entry ${e.type}" data-id="${e.id}"><div><b>${e.type}</b><br><small>${esc(line)}</small>${e.note?`<div class="note">${esc(e.note)}</div>`:''}</div><b class="h">${fmt(h)}</b></div>`;
+}
+function bindEntries(){M.querySelectorAll('.entry').forEach(el=>el.onclick=()=>editEntry(DB.entries.find(e=>e.id===el.dataset.id)));}
+
+function vZeit(){
+  const sd=parseIso(selDate); const mon=new Date(sd); mon.setDate(sd.getDate()-((sd.getDay()+6)%7));
+  const days=[...Array(7)].map((_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d});
+  const kw=(d=>{d=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()+4-n);const y=new Date(Date.UTC(d.getUTCFullYear(),0,1));return Math.ceil(((d-y)/864e5+1)/7)})(sd);
+  const today=iso(new Date());
+  const list=DB.entries.filter(e=>e.date===selDate).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+  const sum=list.reduce((a,e)=>a+hours(e),0);
+  M.innerHTML=`<div class="top"><h1>${MON[sd.getMonth()].slice(0,3)}. ${sd.getFullYear()} <small class="muted" style="font-size:12px">KW ${kw}</small></h1>
+   <button class="btn" id="add">＋ Eintrag</button><button class="icon" id="prev">‹</button><button class="icon" id="today" title="Heute">●</button><button class="icon" id="next">›</button></div>
+   <div class="week">${days.map(d=>{const s=iso(d);const has=DB.entries.some(e=>e.date===s);return `<div><div class="d ${d.getDay()===0?'sun':''}">${WD[d.getDay()]}</div><button data-d="${s}" class="${s===selDate?'sel':''} ${s===today?'today':''}">${d.getDate()}</button>${has?'<div class="dot"></div>':''}</div>`}).join('')}</div>
+   <div class="wrap"><div class="daylbl"><span>${dlbl(selDate)}${isHoliday(selDate)?' · Feiertag':''}</span><span>${list.length?fmt(sum)+' Std.':''}</span></div>
+   ${list.map(entryHtml).join('')||'<p class="muted" style="text-align:center;margin-top:40px">Keine Einträge an diesem Tag.</p>'}</div>`;
+  M.querySelectorAll('.week button').forEach(b=>b.onclick=()=>{selDate=b.dataset.d;render()});
+  const shift=n=>{const d=parseIso(selDate);d.setDate(d.getDate()+n);selDate=iso(d);render()};
+  M.querySelector('#prev').onclick=()=>shift(-7); M.querySelector('#next').onclick=()=>shift(7);
+  M.querySelector('#today').onclick=()=>{selDate=iso(new Date());render()};
+  M.querySelector('#add').onclick=()=>editEntry(null);
+  bindEntries();
+}
+
+function monthsWithData(){
+  const set=new Set(DB.entries.map(e=>e.date.slice(0,7)));
+  const now=new Date(); set.add(now.getFullYear()+'-'+pad(now.getMonth()+1));
+  return [...set].sort().reverse();
+}
+function vProfil(){
+  const s=DB.settings;
+  M.innerHTML=`<div class="top"><h1>${esc(s.name||'Profil')}</h1></div><div class="wrap">
+   <div class="seg noprint"><button data-s="stat">📊 Statistik</button><button data-s="ueber">⏱ Überstunden</button><button data-s="urlaub">☀️ Urlaub</button><button data-s="krank">🩹 Krankheit</button></div>
+   ${monthsWithData().map(k=>{const[y,m]=k.split('-').map(Number);const st=monthStats(y,m-1);return `<div class="month" data-k="${k}"><b>${MON[m-1]} ${y}</b><span>${fmt(st.ist)} / ${fmt(st.soll)} Std. · <span class="${st.diff>=0?'pos':'neg'}">${st.diff>=0?'+':''}${fmt(st.diff)}</span> ›</span></div>`}).join('')}
+  </div>`;
+  M.querySelectorAll('.month').forEach(el=>el.onclick=()=>{monthOpen=el.dataset.k;render();main.scrollTop=0});
+  M.querySelectorAll('[data-s]').forEach(el=>el.onclick=()=>{sub=el.dataset.s;render()});
+}
+function vMonat(){
+  const[y,m]=monthOpen.split('-').map(Number); const st=monthStats(y,m-1); const s=DB.settings;
+  const pct=st.soll?Math.round(st.ist/st.soll*100):0;
+  const byDay={}; st.list.forEach(e=>(byDay[e.date]=byDay[e.date]||[]).push(e));
+  const days=Object.keys(byDay).sort().reverse();
+  M.innerHTML=`<div class="top"><button class="icon" id="back">←</button><h1>${MON[m-1]} ${y} · ${esc(s.name)}</h1>
+   <button class="btn" id="csv">CSV</button><button class="btn" id="pdf">Drucken / PDF</button></div><div class="wrap">
+   <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="muted" style="font-size:12px">GESAMTBRUTTO</div><div class="pos" style="font-size:26px;font-weight:700">${eur(st.brutto)}</div></div><div style="font-size:22px;font-weight:700">${pct}%</div></div>
+   <p class="muted" style="text-align:center">1. ${MON[m-1]} ${y} – ${new Date(y,m,0).getDate()}. ${MON[m-1]} ${y}${s.company?' · '+esc(s.company):''}</p>
+   <div class="kpi"><div><div class="l">IST</div><div class="v">${fmt(st.ist)}</div><div class="l">STD.</div></div><div><div class="l">SOLL</div><div class="v">${fmt(st.soll)}</div><div class="l">STD.</div></div><div><div class="l">DIFF</div><div class="v ${st.diff>=0?'pos':'neg'}">${fmt(st.diff)}</div><div class="l">STD.</div></div></div></div>
+   <div class="card"><b>Lohnabrechnung (Schätzung)</b><table style="margin-top:8px"><tr><th>Bezeichnung</th><th class="r">Menge</th><th class="r">Faktor</th><th class="r">Betrag</th></tr>
+   ${st.rows.map(r=>`<tr><td>${r.name}</td><td class="r">${fmt(r.h)}</td><td class="r">${fmt(r.rate)}</td><td class="r">${fmt(r.betrag)}</td></tr>`).join('')}
+   <tr><td colspan="3" class="muted">Urlaub ${st.urlaub} Tg. · Krank ${st.krank} Tg. · Feiertage ${st.feiertage.length}</td><td class="r"><b>${eur(st.brutto)}</b></td></tr></table>
+   <p class="muted" style="font-size:12px;margin:8px 0 0">Zuschläge werden nicht berücksichtigt.</p></div>
+   ${[...new Set([...days,...st.feiertage])].sort().reverse().map(d=>{const l=(byDay[d]||[]).sort((a,b)=>(b.start||'').localeCompare(a.start||''));return `<div class="daylbl"><span>${dlbl(d)}</span><span>${l.length>1?fmt(l.reduce((a,e)=>a+hours(e),0)):''}</span></div>${st.feiertage.includes(d)?`<div class="entry" style="border-left-color:var(--ok);cursor:default"><div><b>Feiertag: ${esc(isHoliday(d))}</b></div><b class="h">${fmt(s.dailySoll)}</b></div>`:''}${l.map(entryHtml).join('')}`}).join('')||'<p class="muted">Keine Einträge.</p>'}
+  </div>`;
+  M.querySelector('#back').onclick=()=>{monthOpen=null;render()};
+  M.querySelector('#pdf').onclick=()=>window.print();
+  M.querySelector('#csv').onclick=()=>downloadCsv(st.list,`Zeiterfassung_${monthOpen}.csv`);
+  bindEntries();
+}
+function vSub(){
+  const s=DB.settings; const years=[...new Set(DB.entries.map(e=>e.date.slice(0,4)))].sort().reverse();
+  const titles={stat:'Statistik',ueber:'Überstunden',urlaub:'Urlaub',krank:'Krankheit'};
+  let body='';
+  if(sub==='stat'||sub==='ueber'){
+    let bal=+s.overtimeStart||0; const rows=[];
+    monthsWithData().slice().reverse().forEach(k=>{const[y,m]=k.split('-').map(Number);const st=monthStats(y,m-1);bal+=st.diff;rows.push({k,st,bal})});
+    rows.reverse();
+    if(sub==='ueber') body=`<div class="card" style="text-align:center"><div class="muted">Überstunden-Saldo gesamt</div><div style="font-size:32px;font-weight:700" class="${bal>=0?'pos':'neg'}">${fmt(rows[0]?.bal??0)} Std.</div></div>
+      <table><tr><th>Monat</th><th class="r">Diff</th><th class="r">Saldo</th></tr>${rows.map(r=>{const[y,m]=r.k.split('-');return `<tr><td>${MON[m-1]} ${y}</td><td class="r ${r.st.diff>=0?'pos':'neg'}">${fmt(r.st.diff)}</td><td class="r">${fmt(r.bal)}</td></tr>`}).join('')}</table>`;
+    else body=years.map(y=>{const rs=rows.filter(r=>r.k.startsWith(y));const ist=rs.reduce((a,r)=>a+r.st.ist,0),soll=rs.reduce((a,r)=>a+r.st.soll,0),br=rs.reduce((a,r)=>a+r.st.brutto,0);const max=Math.max(...rs.map(r=>r.st.ist),1);
+      return `<h3>${y}</h3><div class="card"><div class="kpi"><div><div class="l">IST</div><div class="v">${fmt(ist)}</div></div><div><div class="l">SOLL</div><div class="v">${fmt(soll)}</div></div><div><div class="l">BRUTTO</div><div class="v" style="font-size:18px">${eur(br)}</div></div></div>
+      <table style="margin-top:10px">${rs.map(r=>`<tr><td style="width:90px">${MON[r.k.slice(5)-1].slice(0,3)}</td><td><div class="bar"><i style="width:${r.st.ist/max*100}%"></i></div></td><td class="r" style="width:70px">${fmt(r.st.ist)}</td></tr>`).join('')}</table></div>`}).join('');
+  } else {
+    const type=sub==='urlaub'?'Urlaub':'Krankheit';
+    const ys=[...new Set([String(new Date().getFullYear()),...years])].sort().reverse();
+    body=ys.map(y=>{const l=DB.entries.filter(e=>e.type===type&&e.date.startsWith(y)).sort((a,b)=>b.date.localeCompare(a.date));const n=new Set(l.map(e=>e.date)).size;
+      let head=`<h3>${y} – ${n} Tage</h3>`;
+      if(type==='Urlaub'&&s.vacationPerYear){const carry=+((s.vacationCarry||{})[y]||0);const rest=s.vacationPerYear+carry-n;
+        head=`<div class="card" style="background:#f5a623;color:#222;margin-top:16px"><b style="font-size:18px">${y} · Resturlaub: ${fmt(rest)}</b><br><small>Urlaub: ${fmt(s.vacationPerYear)} · Übertrag Vorjahr: <input type="number" step="0.5" data-carry="${y}" value="${carry}" style="width:70px;padding:2px 6px;background:#fff;color:#222"> · Genommen: ${n}</small></div>`;}
+      return head+(l.map(e=>`<div class="daylbl" style="margin:8px 4px 4px"><span>${dlbl(e.date)}</span></div>${entryHtml(e)}`).join('')||'<p class="muted">Keine.</p>')}).join('');
+  }
+  M.innerHTML=`<div class="top"><button class="icon" id="back">←</button><h1>${titles[sub]}</h1></div><div class="wrap">${body}</div>`;
+  M.querySelector('#back').onclick=()=>{sub=null;render()};
+  M.querySelectorAll('[data-carry]').forEach(i=>i.onchange=()=>{s.vacationCarry=s.vacationCarry||{};s.vacationCarry[i.dataset.carry]=parseFloat(i.value)||0;save();render()});
+  bindEntries();
+}
+
+function vEinst(){
+  const s=DB.settings;
+  const wd=[1,2,3,4,5,6,0].map(d=>`<label style="display:inline-flex;gap:4px;align-items:center;margin:0 6px 0 0;color:var(--txt)"><input type="checkbox" style="width:auto" data-wd="${d}" ${s.workdays.includes(d)?'checked':''}>${WD[d]}</label>`).join('');
+  M.innerHTML=`<div class="top"><h1>Einstellungen</h1></div><div class="wrap">
+   <h3>Nutzerdaten</h3><div class="set">
+    <div>Name<input data-k="name" value="${esc(s.name)}"></div>
+    <div>Firma<input data-k="company" value="${esc(s.company)}"></div></div>
+   <h3>Stundenlohn (Verlauf – gilt ab Datum)</h3><div class="set">
+    ${s.rates.slice().sort((a,b)=>b.from.localeCompare(a.from)).map(r=>`<div>ab ${dlbl(r.from)}<span style="display:flex;gap:8px;align-items:center"><b>${fmt(r.rate)} €</b>${s.rates.length>1?`<button class="btn red" data-delrate="${r.from}">✕</button>`:''}</span></div>`).join('')}
+    <div><input type="date" id="rd" style="width:auto" value="${iso(new Date())}"><input type="number" step="0.01" id="rv" placeholder="€/Std." style="width:100px"><button class="btn" id="radd">＋ Neuer Lohn</button></div></div>
+   <h3>Meine Arbeitszeit</h3><div class="set">
+    <div>Standardbeginn<input data-k="defaultStart" type="time" value="${s.defaultStart}"></div>
+    <div>Standardende<input data-k="defaultEnd" type="time" value="${s.defaultEnd}"></div>
+    <div>Standardpause (Min.)<input data-k="defaultPause" type="number" value="${s.defaultPause}"></div>
+    <div>Soll-Stunden pro Arbeitstag<input data-k="dailySoll" type="number" step="0.01" value="${s.dailySoll}"></div>
+    <div style="flex-wrap:wrap">Arbeitstage<span>${wd}</span></div>
+    <div>Soll zählt ab Datum<input data-k="startDate" type="date" value="${s.startDate}"></div>
+    <div>Urlaubstage pro Jahr<input data-k="vacationPerYear" type="number" value="${s.vacationPerYear}"></div>
+    <div>Überstunden-Startsaldo<input data-k="overtimeStart" type="number" step="0.01" value="${s.overtimeStart}"></div></div>
+   <h3>Feiertage (an Arbeitstagen ohne Eintrag als bezahlte Stunden gutgeschrieben)</h3><div class="set" id="hol">
+    <div>Gesetzliche Feiertage<select data-k="holidayState" style="width:auto"><option value="NI" ${s.holidayState==='NI'?'selected':''}>Niedersachsen</option><option value="" ${!s.holidayState?'selected':''}>keine (nur eigene)</option></select></div>
+    <div class="muted" style="font-size:12px;display:block">${new Date().getFullYear()}: ${Object.entries(holidaysOf(new Date().getFullYear())).map(([d,n])=>n+' ('+d.slice(8)+'.'+d.slice(5,7)+'.)').join(', ')||'–'}</div>
+    ${s.holidays.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(h=>`<div>${dlbl(h.date)} · ${esc(h.name)}<button class="btn red" data-del="${h.date}">✕</button></div>`).join('')}
+    <div><input type="date" id="hd" style="width:auto"><input id="hn" placeholder="Name" style="width:auto;flex:1;text-align:left"><button class="btn" id="hadd">＋</button></div></div>
+   <h3>Daten</h3><div class="set">
+    <div>Alle Daten sichern (Backup)<button class="btn" id="exp">JSON speichern</button></div>
+    <div>Alle Einträge als Tabelle<button class="btn" id="expcsv">CSV speichern</button></div>
+    <div>Backup wiederherstellen<button class="btn" id="imp">JSON laden</button></div>
+    <div class="muted" style="font-size:12px">${DB.entries.length} Einträge gespeichert. Die Daten liegen nur in diesem Browser – regelmäßig ein Backup speichern!</div></div>
+  </div>`;
+  M.querySelectorAll('[data-k]').forEach(i=>i.onchange=()=>{const k=i.dataset.k;s[k]=i.type==='number'?parseFloat(i.value)||0:i.value;save();if(k==='holidayState')render()});
+  M.querySelectorAll('[data-delrate]').forEach(b=>b.onclick=()=>{if(confirm('Diesen Lohnsatz löschen?')){s.rates=s.rates.filter(r=>r.from!==b.dataset.delrate);save();render()}});
+  M.querySelector('#radd').onclick=()=>{const d=M.querySelector('#rd').value,v=parseFloat(M.querySelector('#rv').value);if(!d||!v)return alert('Bitte Datum und Stundenlohn eingeben.');s.rates=s.rates.filter(r=>r.from!==d);s.rates.push({from:d,rate:v});save();render()};
+  M.querySelectorAll('[data-wd]').forEach(i=>i.onchange=()=>{s.workdays=[...M.querySelectorAll('[data-wd]:checked')].map(x=>+x.dataset.wd);save()});
+  M.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{s.holidays=s.holidays.filter(h=>h.date!==b.dataset.del);save();render()});
+  M.querySelector('#hadd').onclick=()=>{const d=M.querySelector('#hd').value;if(!d)return;s.holidays.push({date:d,name:M.querySelector('#hn').value||'Feiertag'});save();render()};
+  M.querySelector('#exp').onclick=()=>download(JSON.stringify(DB,null,1),`Zeiterfassung_Backup_${iso(new Date())}.json`,'application/json');
+  M.querySelector('#expcsv').onclick=()=>downloadCsv(DB.entries,'Zeiterfassung_alle.csv');
+  M.querySelector('#imp').onclick=()=>document.getElementById('fileIn').click();
+}
+document.getElementById('fileIn').onchange=async ev=>{
+  const f=ev.target.files[0]; if(!f)return;
+  try{const d=JSON.parse(await f.text()); if(!Array.isArray(d.entries))throw new Error('Keine gültige Sicherung');
+    if(!confirm(`Sicherung mit ${d.entries.length} Einträgen laden? Die aktuellen Daten werden ersetzt.`))return;
+    DB=d; DB.settings={...DEFAULT_SETTINGS,...DB.settings}; save(); render(); alert('Wiederhergestellt.');
+  }catch(e){alert('Fehler: '+e.message)} ev.target.value='';
+};
+
+function download(text,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+function downloadCsv(list,name){
+  const rows=[['Datum','Wochentag','Art','Beginn','Ende','Pause (Min.)','Stunden','Grund','Beschreibung']];
+  list.slice().sort((a,b)=>a.date.localeCompare(b.date)||(a.start||'').localeCompare(b.start||'')).forEach(e=>rows.push([e.date.split('-').reverse().join('.'),WD[parseIso(e.date).getDay()],e.type,e.start||'',e.end||'',e.pause||'',fmt(hours(e)),e.reason||'',e.note||'']));
+  download('﻿'+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(';')).join('\r\n'),name,'text/csv');
+}
+
+// ---------- Eintrag bearbeiten ----------
+function editEntry(e){
+  const s=DB.settings; const isNew=!e;
+  e=e?{...e}:{id:uid(),date:selDate,type:'Arbeit',start:s.defaultStart,end:s.defaultEnd,pause:s.defaultPause,note:''};
+  const F=document.getElementById('dlgForm'), D=document.getElementById('dlg');
+  const draw=()=>{
+    const work=e.type==='Arbeit';
+    F.innerHTML=`<h2 style="margin:0 0 14px">${isNew?'Neuer Eintrag':'Eintrag bearbeiten'}</h2>
+    <div class="seg">${['Arbeit','Urlaub','Krankheit'].map(t=>`<button type="button" data-t="${t}" class="${e.type===t?'on':''}">${t}</button>`).join('')}</div>
+    <div class="row"><div><label>${work||!isNew?'Datum':'Von'}</label><input type="date" id="f_date" value="${e.date}" required></div>
+     ${!work&&isNew?`<div><label>Bis</label><input type="date" id="f_to" value="${e.date}"></div>`:''}</div>
+    ${work?`<div class="row"><div><label>Beginn</label><input type="time" id="f_start" value="${e.start}" required></div><div><label>Ende</label><input type="time" id="f_end" value="${e.end}" required></div><div><label>Pause (Min.)</label><input type="number" id="f_pause" min="0" step="5" value="${e.pause||0}"></div></div>`
+     :`<div class="row"><div><label>Stunden pro Tag</label><input type="number" step="0.01" id="f_hours" value="${e.hours??s.dailySoll}"></div><div><label>Grund</label><input id="f_reason" value="${esc(e.reason||(e.type==='Urlaub'?'Ganzer Tag':''))}"></div></div>`}
+    <div style="margin-bottom:12px"><label>Beschreibung</label><textarea id="f_note" rows="3" maxlength="1000" style="resize:vertical">${esc(e.note)}</textarea></div>
+    <p id="f_sum" class="muted"></p>
+    <div style="display:flex;gap:8px;justify-content:space-between">${isNew?'<span></span>':'<button type="button" class="btn red" id="f_del">Löschen</button>'}
+     <span style="display:flex;gap:8px"><button type="button" class="btn" id="f_cancel">Abbrechen</button><button class="btn fill" id="f_ok">Speichern</button></span></div>`;
+    F.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{read();e.type=b.dataset.t;draw()});
+    F.querySelector('#f_cancel').onclick=()=>D.close();
+    const del=F.querySelector('#f_del'); if(del) del.onclick=()=>{if(confirm('Eintrag wirklich löschen?')){DB.entries=DB.entries.filter(x=>x.id!==e.id);save();D.close();render()}};
+    const upd=()=>{read();F.querySelector('#f_sum').textContent=e.type==='Arbeit'&&e.start&&e.end?`= ${fmt(hours(e))} Std.`:''};
+    F.querySelectorAll('input').forEach(i=>i.oninput=upd); upd();
+  };
+  const read=()=>{const v=id=>F.querySelector('#'+id)?.value;
+    e.date=v('f_date')||e.date; e.note=v('f_note')??e.note;
+    if(e.type==='Arbeit'){e.start=v('f_start')||e.start||s.defaultStart;e.end=v('f_end')||e.end||s.defaultEnd;e.pause=parseInt(v('f_pause')||e.pause||0)||0;delete e.hours;delete e.reason}
+    else{e.hours=parseFloat(v('f_hours')??e.hours??s.dailySoll);e.reason=v('f_reason')??e.reason;e._to=v('f_to')}};
+  F.onsubmit=ev=>{ev.preventDefault();read();
+    const base={...e}; delete base._to;
+    if(e.type!=='Arbeit'){delete base.start;delete base.end;delete base.pause}
+    if(isNew&&e.type!=='Arbeit'&&e._to&&e._to>e.date){
+      for(let d=parseIso(e.date);iso(d)<=e._to;d.setDate(d.getDate()+1)){ if(isWorkday(d)) DB.entries.push({...base,id:uid(),date:iso(d)}); }
+    } else { const i=DB.entries.findIndex(x=>x.id===e.id); if(i>=0)DB.entries[i]=base; else DB.entries.push(base); }
+    save(); D.close(); selDate=e.date; render();
+  };
+  draw(); D.showModal();
+}
+
+load(); render();
+</script>
+</body>
+</html>

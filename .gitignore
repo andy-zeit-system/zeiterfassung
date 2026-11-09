@@ -1,0 +1,9 @@
+# Persönliche Daten niemals hochladen
+*.json
+*.csv
+*.txt
+Zeiterfassung*.html
+daten/
+backup*/
+.env
+.env.*
