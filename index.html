@@ -3,115 +3,278 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1688ff">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Zeiten">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>Zeiterfassung</title>
 <style>
-:root{--bg:#2f2f2f;--side:#22252b;--card:#3b3b3b;--card2:#26282d;--line:#4a4a4a;--txt:#eee;--mut:#9a9a9a;--acc:#1688ff;--ok:#7ed321;--bad:#ff5a5a;--warn:#f5a623}
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-button{font:inherit;color:inherit;cursor:pointer}
-input,select,textarea{font:inherit;color:var(--txt);background:#1e1f23;border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
-.app{display:flex;height:100%}
-nav{width:220px;background:var(--side);padding:18px 8px;display:flex;flex-direction:column;gap:4px;flex-shrink:0}
-nav .logo{width:40px;height:40px;border-radius:10px;background:var(--acc);display:grid;place-items:center;font-weight:800;font-size:20px;margin:0 auto 22px}
-nav button{background:none;border:0;text-align:left;padding:10px 14px;border-radius:20px;color:#bbb;display:flex;gap:10px;align-items:center}
-nav button.on{background:#2c3a4f;color:var(--acc)}
-main{flex:1;overflow:auto;padding:0}
-.top{position:sticky;top:0;z-index:5;background:var(--side);padding:12px 16px;display:flex;align-items:center;gap:10px}
-.top h1{font-size:20px;margin:0;flex:1}
-.btn{background:none;border:1px solid var(--acc);color:var(--acc);border-radius:18px;padding:6px 14px}
-.btn.fill{background:var(--acc);color:#fff}
-.btn.red{border-color:var(--bad);color:var(--bad)}
-.icon{background:none;border:0;font-size:20px;padding:4px 8px}
-.wrap{max-width:720px;margin:0 auto;padding:16px}
-.week{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;background:var(--side);padding:4px 8px 12px}
-.week .d{font-size:12px;color:var(--mut)}
-.week button{background:none;border:0;width:36px;height:36px;border-radius:50%;margin:4px auto 0;display:block;font-weight:600}
-.week button.sel{background:var(--acc)}
-.week button.today:not(.sel){outline:1px solid var(--acc)}
-.week .dot{width:5px;height:5px;border-radius:50%;background:#888;margin:3px auto 0}
-.week .sun{color:#ff6b6b}
-.daylbl{color:var(--mut);font-size:13px;font-weight:600;margin:16px 4px 6px;display:flex;justify-content:space-between}
-.entry{background:var(--card);border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;border-left:4px solid var(--acc)}
-.entry.Urlaub{border-left-color:var(--warn)} .entry.Krankheit{border-left-color:var(--bad)}
-.entry small{color:var(--mut)}
-.entry b.h{font-size:16px}
-.entry .note{font-size:13px;color:#ddd;margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
-.entry>div:first-child{min-width:0;flex:1;margin-right:10px}
-.card{background:var(--card2);border-radius:10px;padding:16px;margin-bottom:14px}
-.kpi{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;gap:8px}
-.kpi .l{font-size:11px;color:var(--mut);letter-spacing:.05em}
-.kpi .v{font-size:22px;font-weight:700}
-.pos{color:var(--ok)} .neg{color:var(--bad)}
-.month{background:var(--card);border-radius:6px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;cursor:pointer}
-.month span{color:var(--mut);font-size:13px}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th{font-size:11px;color:var(--mut);text-align:left;font-weight:600;padding:4px}
-td{padding:6px 4px;border-top:1px solid #333}
-td.r,th.r{text-align:right}
-.row{display:flex;gap:10px;margin-bottom:12px}.row>*{flex:1}
-label{display:block;font-size:12px;color:var(--mut);margin-bottom:4px}
-.seg{display:flex;gap:6px;margin-bottom:14px}.seg button{flex:1;border:1px solid var(--line);background:none;border-radius:8px;padding:8px}.seg button.on{background:var(--acc);border-color:var(--acc)}
-dialog{background:var(--card2);color:var(--txt);border:0;border-radius:14px;padding:20px;width:min(440px,94vw)}
-dialog::backdrop{background:#0009}
-.set{background:#1d1e22;border-radius:10px;margin-bottom:18px;overflow:hidden}
-.set>div{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #2c2c2c;gap:10px}
-.set>div:last-child{border:0}
-.set input{width:140px;text-align:right}
-h3{font-size:13px;color:var(--mut);font-weight:600;margin:18px 4px 8px}
-.bar{height:8px;border-radius:4px;background:#444;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
-.muted{color:var(--mut)}
-@media (max-width:760px){
-  .app{flex-direction:column-reverse}
-  nav{width:auto;flex-direction:row;justify-content:space-around;padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
-  nav .logo{display:none}
-  nav button{flex-direction:column;gap:2px;font-size:11px;padding:6px 10px}
-  .wrap{padding:12px}
+:root{
+  --bg:#f3f5f7;--surface:#fff;--surface2:#eef1f4;--line:#e1e6ea;--txt:#16202a;--mut:#687583;
+  --acc:#0f766e;--acc-ink:#fff;--acc-soft:#e3f3f1;
+  --work:#0f766e;--vac:#d97706;--sick:#dc2626;--hol:#7c3aed;--pos:#15803d;--neg:#c2410c;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);--r:14px;
 }
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1215;--surface:#161b1f;--surface2:#1d2429;--line:#283137;--txt:#e7ecef;--mut:#94a1ab;
+  --acc:#2dd4bf;--acc-ink:#062b27;--acc-soft:#123430;
+  --work:#2dd4bf;--vac:#fbbf24;--sick:#f87171;--hol:#a78bfa;--pos:#4ade80;--neg:#fb923c;
+  --shadow:none;}}
+:root[data-theme="dark"]{
+  --bg:#0e1215;--surface:#161b1f;--surface2:#1d2429;--line:#283137;--txt:#e7ecef;--mut:#94a1ab;
+  --acc:#2dd4bf;--acc-ink:#062b27;--acc-soft:#123430;
+  --work:#2dd4bf;--vac:#fbbf24;--sick:#f87171;--hol:#a78bfa;--pos:#4ade80;--neg:#fb923c;--shadow:none;}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+input,select,textarea{font:inherit;color:var(--txt);background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-height:44px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:-1px;border-color:transparent}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--mut)}
+.pos{color:var(--pos)}.neg{color:var(--neg)}
+.hidden{display:none!important}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+nav.side{width:232px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--line);padding:20px 12px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;padding:0 10px 18px}
+.brand img{width:32px;height:32px;border-radius:9px}
+nav.side button{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;color:var(--mut);font-weight:500;text-align:left}
+nav.side button svg{width:20px;height:20px;flex-shrink:0}
+nav.side button:hover{background:var(--surface2);color:var(--txt)}
+nav.side button.on{background:var(--acc-soft);color:var(--acc)}
+nav.side .who{margin-top:auto;font-size:12px;color:var(--mut);padding:10px 12px;overflow-wrap:anywhere}
+main{flex:1;min-width:0;padding-bottom:40px}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:16px max(24px,calc((100% - 760px)/2 + 24px)) 12px;display:flex;align-items:center;gap:8px;min-height:64px}
+.top h1{font-size:22px;margin:0;flex:1;font-weight:700;letter-spacing:-.01em;display:flex;align-items:baseline;gap:8px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top h1 small{font-size:13px;color:var(--mut);font-weight:500}
+.wrap{max-width:760px;margin:0 auto;padding:0 24px}
+.sync{width:8px;height:8px;border-radius:50%;background:var(--pos);flex-shrink:0;margin-left:4px}
+.sync.busy{background:var(--vac);animation:pulse 1s infinite}.sync.err{background:var(--sick)}
+@keyframes pulse{50%{opacity:.3}}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;padding:9px 14px;font-weight:600;min-height:40px;background:var(--surface);border:1px solid var(--line);color:var(--txt);white-space:nowrap}
+.btn:hover{border-color:var(--mut)}
+.btn svg{width:18px;height:18px}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.btn.danger{color:var(--sick)}
+.btn.small{min-height:34px;padding:5px 11px;font-size:13.5px}
+.ibtn{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:var(--txt);flex-shrink:0}
+.ibtn:hover{background:var(--surface2)}
+.ibtn svg{width:20px;height:20px}
+.fab{position:fixed;right:18px;bottom:calc(84px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:18px;background:var(--acc);color:var(--acc-ink);display:none;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:8}
+.fab svg{width:26px;height:26px}
+
+/* Karten */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card h2{font-size:15px;margin:0 0 10px}
+.sec{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:22px 4px 8px;display:flex;justify-content:space-between;gap:8px}
+
+/* Woche */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px}
+.day{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 0 7px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.day .wd{font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase}
+.day .dn{font-size:18px;font-weight:700}
+.day .dh{font-size:11px;color:var(--mut);min-height:16px}
+.day.sun .wd{color:var(--sick)}
+.day.hol .wd{color:var(--hol)}
+.day.today{border-color:var(--acc);border-width:2px;padding:7px 0 6px}
+.day.sel{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.day.sel .wd,.day.sel .dh{color:var(--acc-ink);opacity:.85}
+.weeksum{display:flex;justify-content:space-between;font-size:13px;color:var(--mut);padding:2px 4px 0}
+
+/* Einträge */
+.entry{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;box-shadow:var(--shadow);width:100%;text-align:left}
+.entry:hover{border-color:var(--mut)}
+.entry .stripe{width:4px;align-self:stretch;border-radius:4px;background:var(--work);flex-shrink:0}
+.entry.Urlaub .stripe{background:var(--vac)}.entry.Krankheit .stripe{background:var(--sick)}.entry.Feiertag .stripe{background:var(--hol)}
+.entry.Feiertag{cursor:default}.entry.Feiertag:hover{border-color:var(--line)}
+.entry .body{flex:1;min-width:0}
+.entry .t{font-weight:600}
+.entry .s{font-size:13px;color:var(--mut)}
+.entry .note{font-size:13.5px;margin-top:5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.entry .h{font-weight:700;font-size:16px;white-space:nowrap}
+.empty{text-align:center;color:var(--mut);padding:32px 12px;border:1.5px dashed var(--line);border-radius:var(--r)}
+
+/* Monate */
+.mcard{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow)}
+.mcard:hover{border-color:var(--mut)}
+.mcard .row1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.mcard .row1 b{font-size:16px}
+.mcard .row2{display:flex;justify-content:space-between;font-size:13px;color:var(--mut);margin-top:8px}
+.bar{height:6px;border-radius:6px;background:var(--surface2);overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--acc);border-radius:6px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpi{background:var(--surface2);border-radius:12px;padding:12px 6px;text-align:center}
+.kpi .l{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--mut);text-transform:uppercase}
+.kpi .v{font-size:22px;font-weight:700;margin-top:2px}
+.hero{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:14px}
+.big{font-size:30px;font-weight:800;letter-spacing:-.02em}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:11px;color:var(--mut);text-align:left;font-weight:600;padding:6px 4px;text-transform:uppercase;letter-spacing:.04em}
+td{padding:8px 4px;border-top:1px solid var(--line)}
+td.r,th.r{text-align:right}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:12px;margin-bottom:16px;overflow-x:auto}
+.tabs button{flex:1;padding:8px 12px;border-radius:9px;font-weight:600;font-size:14px;color:var(--mut);white-space:nowrap}
+.tabs button.on{background:var(--surface);color:var(--txt);box-shadow:var(--shadow)}
+
+/* Einstellungen */
+.list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.list>div{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;border-top:1px solid var(--line);min-height:54px}
+.list>div:first-child{border-top:0}
+.list input,.list select{width:160px;text-align:right}
+.list .wide{flex-wrap:wrap}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:13px;font-weight:600;min-width:42px}
+.chip.on{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.vac{background:linear-gradient(135deg,color-mix(in srgb,var(--vac) 20%,var(--surface)),var(--surface))}
+
+/* Dialog */
+dialog{border:0;padding:0;background:var(--surface);color:var(--txt);border-radius:20px;width:min(480px,94vw);max-height:92vh;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(5,10,15,.5)}
+dialog form{padding:20px;overflow:auto;max-height:92vh}
+dialog h2{margin:0 0 16px;font-size:19px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--surface2);padding:4px;border-radius:12px;margin-bottom:16px}
+.seg button{padding:9px;border-radius:9px;font-weight:600;color:var(--mut)}
+.seg button.on{background:var(--surface);color:var(--txt);box-shadow:var(--shadow)}
+.grid{display:grid;gap:12px;margin-bottom:12px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}
+label{display:block;font-size:12.5px;font-weight:600;color:var(--mut);margin-bottom:5px}
+.calc{font-size:15px;font-weight:600;color:var(--acc);min-height:22px;margin:6px 0 14px}
+.actions{display:flex;gap:8px;justify-content:space-between;align-items:center}
+.actions span{display:flex;gap:8px}
+
+/* Anmeldung */
+.login{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
+.login .box{width:min(380px,100%)}
+.login img{width:60px;height:60px;border-radius:16px;display:block;margin:0 auto 14px}
+.login h1{text-align:center;font-size:24px;margin:0 0 4px}
+.login p{text-align:center;margin:0 0 22px}
+.login .card{padding:20px}
+.linkbtn{color:var(--acc);font-weight:600;font-size:14px;padding:6px 0}
+.msg{font-size:14px;margin-top:8px;text-align:center;min-height:20px}
+.msg.err{color:var(--sick)}
+
+#toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--txt);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;opacity:0;transition:.2s;pointer-events:none;z-index:50;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Handy */
+@media (max-width:820px){
+  .app{flex-direction:column}
+  nav.side{position:fixed;bottom:0;left:0;right:0;top:auto;height:auto;width:auto;flex-direction:row;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom));border-right:0;border-top:1px solid var(--line);z-index:20;gap:0}
+  .brand,nav.side .who{display:none}
+  nav.side button{flex-direction:column;align-items:center;gap:3px;font-size:11px;padding:4px 2px;flex:1;max-width:96px}
+  nav.side button:hover{background:none}
+  nav.side button.on{background:none}
+  nav.side button.on svg{background:var(--acc-soft);border-radius:999px;padding:3px 16px;width:56px;height:28px}
+  main{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+  .top{padding:calc(12px + env(safe-area-inset-top)) 12px 10px 16px;gap:4px}
+  .top h1{font-size:20px}
+  .wrap{padding:0 16px}
+  .fab{display:grid}
+  .hide-m{display:none!important}
+  .week{gap:4px}
+  .day .dn{font-size:16px}
+  dialog{width:100vw;max-width:100vw;margin:auto 0 0;border-radius:20px 20px 0 0;max-height:94vh}
+  dialog form{padding:20px 16px calc(20px + env(safe-area-inset-bottom))}
+  .list input,.list select{width:130px}
+}
+@media (max-width:400px){.g3{grid-template-columns:1fr 1fr}.g3>div:last-child{grid-column:span 2}.kpi .v{font-size:18px}.big{font-size:26px}}
 @media print{
-  nav,.top .btn,.top .icon,.noprint{display:none!important}
-  body,main,.card,.entry{background:#fff!important;color:#000!important}
-  .top{background:#fff;position:static}
-  td{border-color:#ccc}
+  nav.side,.fab,.noprint,#toast,.sync{display:none!important}
+  body,main{background:#fff;color:#000}
+  .top{position:static;background:#fff}
+  .card,.entry,.kpi{box-shadow:none;border-color:#ccc;background:#fff}
 }
 </style>
 </head>
 <body>
-<div class="app">
-  <nav>
-    <div class="logo">Z</div>
-    <button data-v="zeit">🕒 <span>Zeiterfassung</span></button>
-    <button data-v="profil">👤 <span>Profil</span></button>
-    <button data-v="einst">⚙️ <span>Einstellungen</span></button>
-  </nav>
-  <main id="main"></main>
-</div>
-
+<div id="root"></div>
 <dialog id="dlg"><form method="dialog" id="dlgForm"></form></dialog>
 <input type="file" id="fileIn" accept=".json,application/json" hidden>
+<div id="toast" role="status"></div>
 
-<script id="seed" type="application/json">null</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script>
+// ---------- Verbindung ----------
+// Öffentliche Projektangaben (kein Geheimnis). Die Daten sind durch Anmeldung + Row Level Security geschützt.
+const SB_URL='https://qtidstkbbnddllkpthpb.supabase.co';
+const SB_KEY='sb_publishable_FACSzfUELibVAgrlb8t8pQ_fOJlzfoJ';
+const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+
+// ---------- Symbole ----------
+const svg=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const IC={
+  clock:svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  cal:svg('<rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 3v3M16 3v3"/>'),
+  chart:svg('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
+  gear:svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
+  plus:svg('<path d="M12 5v14M5 12h14"/>'),
+  left:svg('<path d="M15 18l-6-6 6-6"/>'),
+  right:svg('<path d="M9 18l6-6-6-6"/>'),
+  back:svg('<path d="M19 12H5M12 19l-7-7 7-7"/>'),
+};
+
 // ---------- Daten ----------
-const KEY='zeiterfassung.v1';
-const DEFAULT_SETTINGS={name:'',company:'',rates:[{from:'2000-01-01',rate:22}],dailySoll:4.98,workdays:[1,2,3,4,5,6],defaultStart:'06:00',defaultEnd:'21:00',defaultPause:0,holidayState:'NI',holidays:[],vacationPerYear:0,vacationCarry:{},overtimeStart:0,startDate:''};
-let DB;
-function load(){
-  try{const s=localStorage.getItem(KEY); if(s){DB=JSON.parse(s);}}catch(e){}
-  let seed=null; try{seed=JSON.parse(document.getElementById('seed').textContent);}catch(e){}
-  if(!DB) DB=seed;
-  else if(seed&&seed.meta&&(seed.meta.version||0)>((DB.meta||{}).version||0)){
-    // Neuere mitgelieferte Daten: fehlende Beschreibungen in vorhandene Einträge übernehmen (nichts überschreiben)
-    const byId={}; seed.entries.forEach(e=>byId[e.id]=e);
-    DB.entries.forEach(e=>{const s=byId[e.id]; if(s&&s.note&&!e.note) e.note=s.note;});
-    DB.meta={...(DB.meta||{}),version:seed.meta.version};
+const DEFAULT_SETTINGS={name:'',company:'',rates:[{from:'2000-01-01',rate:0}],dailySoll:4.98,workdays:[1,2,3,4,5,6],defaultStart:'08:00',defaultEnd:'12:00',defaultPause:0,holidayState:'NI',holidays:[],vacationPerYear:0,vacationCarry:{},overtimeStart:0,startDate:''};
+let DB={settings:{...DEFAULT_SETTINGS},entries:[]}, USER=null, lastFetch=0;
+const cacheKey=()=>'zeit.cache.'+(USER&&USER.id);
+const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));
+
+const toRow=e=>({user_id:USER.id,id:String(e.id),date:e.date,type:e.type,
+  start_time:e.type==='Arbeit'?e.start:null,end_time:e.type==='Arbeit'?e.end:null,pause:e.type==='Arbeit'?(+e.pause||0):0,
+  hours:e.type==='Arbeit'?null:(e.hours??null),reason:e.type==='Arbeit'?null:(e.reason||null),note:e.note||null,updated_at:new Date().toISOString()});
+const fromRow=r=>r.type==='Arbeit'
+  ?{id:r.id,date:r.date,type:r.type,start:(r.start_time||'').slice(0,5),end:(r.end_time||'').slice(0,5),pause:r.pause||0,note:r.note||''}
+  :{id:r.id,date:r.date,type:r.type,hours:r.hours!=null?+r.hours:null,reason:r.reason||'',note:r.note||''};
+
+function setSync(state){const el=document.getElementById('sync');if(el){el.className='sync '+(state||'');el.title={busy:'Wird gespeichert…',err:'Keine Verbindung – nicht gespeichert'}[state]||'Gespeichert'}}
+function cacheSave(){try{localStorage.setItem(cacheKey(),JSON.stringify(DB))}catch(e){}}
+function cacheLoad(){try{const s=localStorage.getItem(cacheKey());if(s){DB=JSON.parse(s);DB.settings={...DEFAULT_SETTINGS,...DB.settings};return true}}catch(e){}return false}
+function clearHol(){for(const k in _hol) delete _hol[k]}
+
+async function fetchAll(){
+  setSync('busy');
+  const st=await sb.from('settings').select('data').maybeSingle();
+  if(st.error) throw st.error;
+  const all=[]; const N=1000;
+  for(let from=0;;from+=N){
+    const r=await sb.from('entries').select('*').order('date').order('id').range(from,from+N-1);
+    if(r.error) throw r.error;
+    all.push(...r.data); if(r.data.length<N) break;
   }
-  if(!DB||!DB.entries) DB={settings:{},entries:[]};
-  DB.settings={...DEFAULT_SETTINGS,...DB.settings};
-  save();
+  DB={settings:{...DEFAULT_SETTINGS,...((st.data&&st.data.data)||{})},entries:all.map(fromRow)};
+  clearHol(); cacheSave(); setSync(); lastFetch=Date.now();
 }
-function save(){ try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){alert('Speichern fehlgeschlagen: '+e)} }
-const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+async function refresh(silent){
+  try{await fetchAll(); render();}
+  catch(e){setSync('err'); if(!silent) toast('Laden fehlgeschlagen: '+(e.message||e));}
+}
+async function saveEntries(list){
+  cacheSave(); setSync('busy');
+  const {error}=await sb.from('entries').upsert(list.map(toRow),{onConflict:'user_id,id'});
+  if(error){setSync('err');toast('Nicht gespeichert: '+error.message);await refresh(true);return false}
+  setSync(); return true;
+}
+async function deleteEntry(id){
+  DB.entries=DB.entries.filter(x=>x.id!==id); cacheSave(); render(); setSync('busy');
+  const {error}=await sb.from('entries').delete().eq('id',id);
+  if(error){setSync('err');toast('Löschen fehlgeschlagen: '+error.message);await refresh(true);return}
+  setSync(); toast('Gelöscht');
+}
+let setTimer=null;
+function saveSettings(){
+  clearHol(); cacheSave(); setSync('busy'); clearTimeout(setTimer);
+  setTimer=setTimeout(async()=>{
+    const {error}=await sb.from('settings').upsert({user_id:USER.id,data:DB.settings,updated_at:new Date().toISOString()});
+    if(error){setSync('err');toast('Einstellungen nicht gespeichert: '+error.message)} else setSync();
+  },500);
+}
 
 // ---------- Hilfen ----------
 const pad=n=>String(n).padStart(2,'0');
@@ -119,19 +282,20 @@ const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const parseIso=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
 const MON=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const WD=['So','Mo','Di','Mi','Do','Fr','Sa'];
-const fmt=(n,d=2)=>(Math.round(n*100)/100).toLocaleString('de-DE',{maximumFractionDigits:d});
+const WDL=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+const fmt=(n,d=2)=>(Math.round(n*100)/100).toLocaleString('de-DE',{minimumFractionDigits:0,maximumFractionDigits:d});
+const fmtS=n=>(Math.round(n*100)>0?'+':'')+fmt(n);
 const eur=n=>n.toLocaleString('de-DE',{style:'currency',currency:'EUR'});
-const dlbl=s=>{const d=parseIso(s);return WD[d.getDay()]+'. '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()};
-const toMin=t=>{const[h,m]=t.split(':').map(Number);return h*60+m};
+const dlbl=s=>{const d=parseIso(s);return WD[d.getDay()]+'., '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()};
+const dlong=s=>{const d=parseIso(s);return WDL[d.getDay()]+', '+d.getDate()+'. '+MON[d.getMonth()]};
+const toMin=t=>{const[h,m]=(t||'0:0').split(':').map(Number);return h*60+m};
 function hours(e){
   if(e.type!=='Arbeit') return e.hours!=null?e.hours:DB.settings.dailySoll;
   let m=toMin(e.end)-toMin(e.start); if(m<0)m+=1440;
   return (m-(+e.pause||0))/60;
 }
 function pauseLbl(p){p=+p||0;if(!p)return'';return p%60===0?(p/60)+' Std.':p>60?Math.floor(p/60)+' Std. '+(p%60)+' Min.':p+' Min.'}
-// Stundenlohn zum Datum (Lohnverlauf)
 function rateFor(s){const r=(DB.settings.rates||[]).slice().sort((a,b)=>a.from.localeCompare(b.from));let v=r.length?r[0].rate:0;r.forEach(x=>{if(x.from<=s)v=x.rate});return +v}
-// Gesetzliche Feiertage (Niedersachsen) + eigene Feiertage
 function easter(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=(h+l-7*m+114)%31+1;return new Date(y,mo-1,da)}
 const _hol={};
 function holidaysOf(y){
@@ -142,7 +306,7 @@ function holidaysOf(y){
   }
   return _hol[key]=r;
 }
-const isHoliday=s=>holidaysOf(+s.slice(0,4))[s]||(DB.settings.holidays.find(h=>h.date===s)||{}).name||'';
+const isHoliday=s=>holidaysOf(+s.slice(0,4))[s]||((DB.settings.holidays||[]).find(h=>h.date===s)||{}).name||'';
 function isWorkday(d){return DB.settings.workdays.includes(d.getDay())&&!isHoliday(iso(d))}
 const LOHN_ORDER=['Zeitlohn','Urlaubslohn','Krankheitslohn','Feiertagslohn'];
 function monthStats(y,m){
@@ -154,7 +318,7 @@ function monthStats(y,m){
   for(let d=new Date(y,m,1);d.getMonth()===m;d.setDate(d.getDate()+1)){
     const s=iso(d); if((st&&s<st)||!DB.settings.workdays.includes(d.getDay())) continue;
     soll+=ds;
-    // Feiertag auf Arbeitstag ohne Eintrag: wird bezahlt gutgeschrieben (wie bei ACHIM "Feiertagslohn")
+    // Feiertag auf Arbeitstag ohne Eintrag: wird bezahlt gutgeschrieben (Feiertagslohn)
     if(isHoliday(s) && !list.some(e=>e.date===s)){ add('Feiertagslohn',ds,s); feiertage.push(s); }
   }
   const KIND={Arbeit:'Zeitlohn',Urlaub:'Urlaubslohn',Krankheit:'Krankheitslohn'};
@@ -163,164 +327,213 @@ function monthStats(y,m){
   const rows=Object.entries(lohn).map(([k,h])=>{const[name,rate]=k.split('|');return{name,rate:+rate,h:r2(h),betrag:r2(r2(h)*rate)}})
     .sort((a,b)=>LOHN_ORDER.indexOf(a.name)-LOHN_ORDER.indexOf(b.name)||a.rate-b.rate);
   const ist=rows.reduce((a,r)=>a+r.h,0);
-  const work=list.filter(e=>e.type==='Arbeit').reduce((a,e)=>a+hours(e),0);
-  return {list,rows,feiertage,soll:r2(soll),ist:r2(ist),work,diff:r2(ist-soll),brutto:r2(rows.reduce((a,r)=>a+r.betrag,0)),
+  return {list,rows,feiertage,soll:r2(soll),ist:r2(ist),diff:r2(ist-soll),brutto:r2(rows.reduce((a,r)=>a+r.betrag,0)),
     urlaub:new Set(list.filter(e=>e.type==='Urlaub').map(e=>e.date)).size,krank:new Set(list.filter(e=>e.type==='Krankheit').map(e=>e.date)).size};
 }
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let toastT; function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2800)}
 
-// ---------- Ansichten ----------
-let view='zeit', selDate=iso(new Date()), monthOpen=null, sub=null;
-const M=document.getElementById('main');
-function go(v){view=v;monthOpen=null;sub=null;render();}
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
-
+// ---------- Grundgerüst ----------
+const R=document.getElementById('root');
+let view='zeit', selDate=iso(new Date()), monthOpen=null, tab='ueber', M=null;
+const NAV=[['zeit','Zeiten',IC.clock],['monate','Monate',IC.cal],['auswertung','Auswertung',IC.chart],['einst','Einstellungen',IC.gear]];
+function shell(){
+  R.innerHTML=`<div class="app"><nav class="side">
+    <div class="brand"><img src="icon.svg" alt="">Zeiterfassung</div>
+    ${NAV.map(([k,l,i])=>`<button data-v="${k}">${i}<span>${l}</span></button>`).join('')}
+    <div class="who">${esc(USER.email)}</div></nav>
+    <main id="main"></main></div>
+    <button class="fab noprint" id="fab" aria-label="Neuer Eintrag">${IC.plus}</button>`;
+  M=document.getElementById('main');
+  R.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
+  document.getElementById('fab').onclick=()=>editEntry(null);
+}
+function go(v){view=v;monthOpen=null;render();window.scrollTo(0,0)}
+function topBar(title,extra='',backBtn=false){
+  return `<div class="top">${backBtn?`<button class="ibtn" id="back" aria-label="Zurück">${IC.back}</button>`:''}<h1>${title}</h1>${extra}<span class="sync" id="sync" title="Gespeichert"></span></div>`;
+}
 function render(){
-  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
-  if(view==='zeit') return vZeit();
-  if(view==='profil') return monthOpen?vMonat():sub?vSub():vProfil();
-  if(view==='einst') return vEinst();
+  if(!M) return;
+  R.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
+  document.getElementById('fab').classList.toggle('hidden',view==='einst');
+  if(view==='zeit') vZeit();
+  else if(view==='monate') monthOpen?vMonat():vMonate();
+  else if(view==='auswertung') vAuswertung();
+  else vEinst();
 }
 
 function entryHtml(e){
-  const h=hours(e);
-  let line = e.type==='Arbeit' ? `${e.start} – ${e.end}${e.pause?' · Pause '+pauseLbl(e.pause):''}` : (e.reason||'Ganzer Tag');
-  return `<div class="entry ${e.type}" data-id="${e.id}"><div><b>${e.type}</b><br><small>${esc(line)}</small>${e.note?`<div class="note">${esc(e.note)}</div>`:''}</div><b class="h">${fmt(h)}</b></div>`;
+  const line=e.type==='Arbeit'?`${e.start} – ${e.end}${e.pause?' · Pause '+pauseLbl(e.pause):''}`:(e.reason||'Ganzer Tag');
+  return `<button class="entry ${e.type}" data-id="${esc(e.id)}"><span class="stripe"></span><span class="body"><div class="t">${e.type}</div><div class="s num">${esc(line)}</div>${e.note?`<div class="note">${esc(e.note)}</div>`:''}</span><span class="h num">${fmt(hours(e))} h</span></button>`;
 }
-function bindEntries(){M.querySelectorAll('.entry').forEach(el=>el.onclick=()=>editEntry(DB.entries.find(e=>e.id===el.dataset.id)));}
+const holidayHtml=d=>`<div class="entry Feiertag"><span class="stripe"></span><span class="body"><div class="t">Feiertag</div><div class="s">${esc(isHoliday(d))}</div></span><span class="h num">${fmt(DB.settings.dailySoll)} h</span></div>`;
+function bindEntries(){M.querySelectorAll('button.entry').forEach(el=>el.onclick=()=>editEntry(DB.entries.find(e=>e.id===el.dataset.id)));}
 
+// ---------- Ansicht: Zeiten ----------
 function vZeit(){
   const sd=parseIso(selDate); const mon=new Date(sd); mon.setDate(sd.getDate()-((sd.getDay()+6)%7));
   const days=[...Array(7)].map((_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d});
   const kw=(d=>{d=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()+4-n);const y=new Date(Date.UTC(d.getUTCFullYear(),0,1));return Math.ceil(((d-y)/864e5+1)/7)})(sd);
-  const today=iso(new Date());
-  const list=DB.entries.filter(e=>e.date===selDate).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
-  const sum=list.reduce((a,e)=>a+hours(e),0);
-  M.innerHTML=`<div class="top"><h1>${MON[sd.getMonth()].slice(0,3)}. ${sd.getFullYear()} <small class="muted" style="font-size:12px">KW ${kw}</small></h1>
-   <button class="btn" id="add">＋ Eintrag</button><button class="icon" id="prev">‹</button><button class="icon" id="today" title="Heute">●</button><button class="icon" id="next">›</button></div>
-   <div class="week">${days.map(d=>{const s=iso(d);const has=DB.entries.some(e=>e.date===s);return `<div><div class="d ${d.getDay()===0?'sun':''}">${WD[d.getDay()]}</div><button data-d="${s}" class="${s===selDate?'sel':''} ${s===today?'today':''}">${d.getDate()}</button>${has?'<div class="dot"></div>':''}</div>`}).join('')}</div>
-   <div class="wrap"><div class="daylbl"><span>${dlbl(selDate)}${isHoliday(selDate)?' · Feiertag':''}</span><span>${list.length?fmt(sum)+' Std.':''}</span></div>
-   ${list.map(entryHtml).join('')||'<p class="muted" style="text-align:center;margin-top:40px">Keine Einträge an diesem Tag.</p>'}</div>`;
-  M.querySelectorAll('.week button').forEach(b=>b.onclick=()=>{selDate=b.dataset.d;render()});
+  const today=iso(new Date()), a=iso(days[0]), b=iso(days[6]);
+  const byDay={}; DB.entries.forEach(e=>{if(e.date>=a&&e.date<=b)(byDay[e.date]=byDay[e.date]||[]).push(e)});
+  const list=(byDay[selDate]||[]).sort((x,y)=>(x.start||'').localeCompare(y.start||''));
+  const sum=list.reduce((s,e)=>s+hours(e),0);
+  const wsum=Object.values(byDay).flat().reduce((s,e)=>s+hours(e),0);
+  const st=DB.settings; let wsoll=0; days.forEach(d=>{if(st.workdays.includes(d.getDay())&&(!st.startDate||iso(d)>=st.startDate))wsoll+=st.dailySoll});
+  const hol=isHoliday(selDate);
+  M.innerHTML=topBar(`${MON[sd.getMonth()]} ${sd.getFullYear()} <small>KW ${kw}</small>`,
+    `<button class="ibtn" id="prev" aria-label="Vorige Woche">${IC.left}</button><button class="btn small" id="today">Heute</button><button class="ibtn" id="next" aria-label="Nächste Woche">${IC.right}</button><button class="btn pri hide-m" id="add" style="margin-left:6px">${IC.plus} Eintrag</button>`)+
+   `<div class="wrap">
+    <div class="week">${days.map(d=>{const s=iso(d);const h=(byDay[s]||[]).reduce((x,e)=>x+hours(e),0);
+      return `<button class="day ${s===selDate?'sel':''} ${s===today?'today':''} ${d.getDay()===0?'sun':''} ${isHoliday(s)?'hol':''}" data-d="${s}"><span class="wd">${WD[d.getDay()]}</span><span class="dn">${d.getDate()}</span><span class="dh num">${h?fmt(h,1):''}</span></button>`}).join('')}</div>
+    <div class="weeksum num"><span>Woche: ${fmt(wsum)} von ${fmt(wsoll)} Std.</span><span class="${wsum-wsoll>=0?'pos':'neg'}">${fmtS(wsum-wsoll)}</span></div>
+    <div class="sec"><span>${dlong(selDate)}${hol?' · '+esc(hol):''}</span><span class="num">${list.length?fmt(sum)+' Std.':''}</span></div>
+    ${hol&&!list.length&&st.workdays.includes(sd.getDay())?holidayHtml(selDate):''}
+    ${list.map(entryHtml).join('')||(hol?'':`<div class="empty">Noch kein Eintrag an diesem Tag.<br><br><button class="btn pri" id="add2">${IC.plus} Eintrag hinzufügen</button></div>`)}
+   </div>`;
+  M.querySelectorAll('.day').forEach(el=>el.onclick=()=>{selDate=el.dataset.d;render()});
   const shift=n=>{const d=parseIso(selDate);d.setDate(d.getDate()+n);selDate=iso(d);render()};
   M.querySelector('#prev').onclick=()=>shift(-7); M.querySelector('#next').onclick=()=>shift(7);
   M.querySelector('#today').onclick=()=>{selDate=iso(new Date());render()};
-  M.querySelector('#add').onclick=()=>editEntry(null);
+  M.querySelectorAll('#add,#add2').forEach(el=>el.onclick=()=>editEntry(null));
   bindEntries();
 }
 
+// ---------- Ansicht: Monate ----------
 function monthsWithData(){
   const set=new Set(DB.entries.map(e=>e.date.slice(0,7)));
   const now=new Date(); set.add(now.getFullYear()+'-'+pad(now.getMonth()+1));
   return [...set].sort().reverse();
 }
-function vProfil(){
-  const s=DB.settings;
-  M.innerHTML=`<div class="top"><h1>${esc(s.name||'Profil')}</h1></div><div class="wrap">
-   <div class="seg noprint"><button data-s="stat">📊 Statistik</button><button data-s="ueber">⏱ Überstunden</button><button data-s="urlaub">☀️ Urlaub</button><button data-s="krank">🩹 Krankheit</button></div>
-   ${monthsWithData().map(k=>{const[y,m]=k.split('-').map(Number);const st=monthStats(y,m-1);return `<div class="month" data-k="${k}"><b>${MON[m-1]} ${y}</b><span>${fmt(st.ist)} / ${fmt(st.soll)} Std. · <span class="${st.diff>=0?'pos':'neg'}">${st.diff>=0?'+':''}${fmt(st.diff)}</span> ›</span></div>`}).join('')}
-  </div>`;
-  M.querySelectorAll('.month').forEach(el=>el.onclick=()=>{monthOpen=el.dataset.k;render();main.scrollTop=0});
-  M.querySelectorAll('[data-s]').forEach(el=>el.onclick=()=>{sub=el.dataset.s;render()});
+function vMonate(){
+  let lastY='';
+  M.innerHTML=topBar('Monate')+`<div class="wrap">${monthsWithData().map(k=>{const[y,m]=k.split('-').map(Number);const st=monthStats(y,m-1);
+    const pct=st.soll?Math.min(100,st.ist/st.soll*100):0; const head=String(y)!==lastY?`<div class="sec"><span>${y}</span></div>`:''; lastY=String(y);
+    return `${head}<button class="mcard" data-k="${k}"><div class="row1"><b>${MON[m-1]}</b><span class="num ${st.diff>=0?'pos':'neg'}" style="font-weight:700">${fmtS(st.diff)} h</span></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="row2 num"><span>${fmt(st.ist)} von ${fmt(st.soll)} Std.</span><span>${eur(st.brutto)}</span></div></button>`}).join('')}</div>`;
+  M.querySelectorAll('.mcard').forEach(el=>el.onclick=()=>{monthOpen=el.dataset.k;render();window.scrollTo(0,0)});
 }
 function vMonat(){
   const[y,m]=monthOpen.split('-').map(Number); const st=monthStats(y,m-1); const s=DB.settings;
   const pct=st.soll?Math.round(st.ist/st.soll*100):0;
   const byDay={}; st.list.forEach(e=>(byDay[e.date]=byDay[e.date]||[]).push(e));
-  const days=Object.keys(byDay).sort().reverse();
-  M.innerHTML=`<div class="top"><button class="icon" id="back">←</button><h1>${MON[m-1]} ${y} · ${esc(s.name)}</h1>
-   <button class="btn" id="csv">CSV</button><button class="btn" id="pdf">Drucken / PDF</button></div><div class="wrap">
-   <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="muted" style="font-size:12px">GESAMTBRUTTO</div><div class="pos" style="font-size:26px;font-weight:700">${eur(st.brutto)}</div></div><div style="font-size:22px;font-weight:700">${pct}%</div></div>
-   <p class="muted" style="text-align:center">1. ${MON[m-1]} ${y} – ${new Date(y,m,0).getDate()}. ${MON[m-1]} ${y}${s.company?' · '+esc(s.company):''}</p>
-   <div class="kpi"><div><div class="l">IST</div><div class="v">${fmt(st.ist)}</div><div class="l">STD.</div></div><div><div class="l">SOLL</div><div class="v">${fmt(st.soll)}</div><div class="l">STD.</div></div><div><div class="l">DIFF</div><div class="v ${st.diff>=0?'pos':'neg'}">${fmt(st.diff)}</div><div class="l">STD.</div></div></div></div>
-   <div class="card"><b>Lohnabrechnung (Schätzung)</b><table style="margin-top:8px"><tr><th>Bezeichnung</th><th class="r">Menge</th><th class="r">Faktor</th><th class="r">Betrag</th></tr>
-   ${st.rows.map(r=>`<tr><td>${r.name}</td><td class="r">${fmt(r.h)}</td><td class="r">${fmt(r.rate)}</td><td class="r">${fmt(r.betrag)}</td></tr>`).join('')}
-   <tr><td colspan="3" class="muted">Urlaub ${st.urlaub} Tg. · Krank ${st.krank} Tg. · Feiertage ${st.feiertage.length}</td><td class="r"><b>${eur(st.brutto)}</b></td></tr></table>
-   <p class="muted" style="font-size:12px;margin:8px 0 0">Zuschläge werden nicht berücksichtigt.</p></div>
-   ${[...new Set([...days,...st.feiertage])].sort().reverse().map(d=>{const l=(byDay[d]||[]).sort((a,b)=>(b.start||'').localeCompare(a.start||''));return `<div class="daylbl"><span>${dlbl(d)}</span><span>${l.length>1?fmt(l.reduce((a,e)=>a+hours(e),0)):''}</span></div>${st.feiertage.includes(d)?`<div class="entry" style="border-left-color:var(--ok);cursor:default"><div><b>Feiertag: ${esc(isHoliday(d))}</b></div><b class="h">${fmt(s.dailySoll)}</b></div>`:''}${l.map(entryHtml).join('')}`}).join('')||'<p class="muted">Keine Einträge.</p>'}
+  const days=[...new Set([...Object.keys(byDay),...st.feiertage])].sort().reverse();
+  M.innerHTML=topBar(`${MON[m-1]} ${y}`,`<button class="btn small noprint" id="csv">CSV</button><button class="btn small noprint" id="pdf">Drucken</button>`,true)+`<div class="wrap">
+   <div class="card">
+    <div class="hero"><div><div class="muted" style="font-size:13px">${esc(s.name)}${s.company?' · '+esc(s.company):''}</div><div class="muted" style="font-size:12px">Bruttolohn (Schätzung)</div><div class="big num pos">${eur(st.brutto)}</div></div><div class="big num">${pct}%</div></div>
+    <div class="kpis num"><div class="kpi"><div class="l">Ist</div><div class="v">${fmt(st.ist)}</div></div><div class="kpi"><div class="l">Soll</div><div class="v">${fmt(st.soll)}</div></div><div class="kpi"><div class="l">Differenz</div><div class="v ${st.diff>=0?'pos':'neg'}">${fmtS(st.diff)}</div></div></div>
+   </div>
+   <div class="card"><h2>Lohnabrechnung</h2><table class="num"><tr><th>Bezeichnung</th><th class="r">Std.</th><th class="r">€/Std.</th><th class="r">Betrag</th></tr>
+    ${st.rows.map(r=>`<tr><td>${r.name}</td><td class="r">${fmt(r.h)}</td><td class="r">${fmt(r.rate)}</td><td class="r">${eur(r.betrag)}</td></tr>`).join('')}
+    <tr><td colspan="3"><b>Gesamt</b></td><td class="r"><b>${eur(st.brutto)}</b></td></tr></table>
+    <p class="muted" style="font-size:12.5px;margin:10px 0 0">Urlaub ${st.urlaub} Tg. · Krank ${st.krank} Tg. · Feiertage ${st.feiertage.length} · ohne Zuschläge</p></div>
+   ${days.map(d=>{const l=(byDay[d]||[]).sort((a,b)=>(a.start||'').localeCompare(b.start||''));const sum=l.reduce((a,e)=>a+hours(e),0);
+     return `<div class="sec"><span>${dlbl(d)}</span><span class="num">${l.length>1?fmt(sum)+' Std.':''}</span></div>${st.feiertage.includes(d)?holidayHtml(d):''}${l.map(entryHtml).join('')}`}).join('')||'<div class="empty">Keine Einträge in diesem Monat.</div>'}
   </div>`;
   M.querySelector('#back').onclick=()=>{monthOpen=null;render()};
   M.querySelector('#pdf').onclick=()=>window.print();
   M.querySelector('#csv').onclick=()=>downloadCsv(st.list,`Zeiterfassung_${monthOpen}.csv`);
   bindEntries();
 }
-function vSub(){
+
+// ---------- Ansicht: Auswertung ----------
+function vAuswertung(){
   const s=DB.settings; const years=[...new Set(DB.entries.map(e=>e.date.slice(0,4)))].sort().reverse();
-  const titles={stat:'Statistik',ueber:'Überstunden',urlaub:'Urlaub',krank:'Krankheit'};
   let body='';
-  if(sub==='stat'||sub==='ueber'){
+  if(tab==='ueber'||tab==='jahre'){
     let bal=+s.overtimeStart||0; const rows=[];
     monthsWithData().slice().reverse().forEach(k=>{const[y,m]=k.split('-').map(Number);const st=monthStats(y,m-1);bal+=st.diff;rows.push({k,st,bal})});
-    rows.reverse();
-    if(sub==='ueber') body=`<div class="card" style="text-align:center"><div class="muted">Überstunden-Saldo gesamt</div><div style="font-size:32px;font-weight:700" class="${bal>=0?'pos':'neg'}">${fmt(rows[0]?.bal??0)} Std.</div></div>
-      <table><tr><th>Monat</th><th class="r">Diff</th><th class="r">Saldo</th></tr>${rows.map(r=>{const[y,m]=r.k.split('-');return `<tr><td>${MON[m-1]} ${y}</td><td class="r ${r.st.diff>=0?'pos':'neg'}">${fmt(r.st.diff)}</td><td class="r">${fmt(r.bal)}</td></tr>`}).join('')}</table>`;
-    else body=years.map(y=>{const rs=rows.filter(r=>r.k.startsWith(y));const ist=rs.reduce((a,r)=>a+r.st.ist,0),soll=rs.reduce((a,r)=>a+r.st.soll,0),br=rs.reduce((a,r)=>a+r.st.brutto,0);const max=Math.max(...rs.map(r=>r.st.ist),1);
-      return `<h3>${y}</h3><div class="card"><div class="kpi"><div><div class="l">IST</div><div class="v">${fmt(ist)}</div></div><div><div class="l">SOLL</div><div class="v">${fmt(soll)}</div></div><div><div class="l">BRUTTO</div><div class="v" style="font-size:18px">${eur(br)}</div></div></div>
-      <table style="margin-top:10px">${rs.map(r=>`<tr><td style="width:90px">${MON[r.k.slice(5)-1].slice(0,3)}</td><td><div class="bar"><i style="width:${r.st.ist/max*100}%"></i></div></td><td class="r" style="width:70px">${fmt(r.st.ist)}</td></tr>`).join('')}</table></div>`}).join('');
+    rows.reverse(); const cur=rows[0]?rows[0].bal:0;
+    if(tab==='ueber') body=`<div class="card" style="text-align:center"><div class="muted">Überstunden-Saldo</div><div class="big num ${cur>=0?'pos':'neg'}" style="font-size:36px">${fmtS(cur)} Std.</div></div>
+      <div class="card"><table class="num"><tr><th>Monat</th><th class="r">Differenz</th><th class="r">Saldo</th></tr>${rows.map(r=>{const[y,m]=r.k.split('-');return `<tr><td>${MON[m-1]} ${y}</td><td class="r ${r.st.diff>=0?'pos':'neg'}">${fmtS(r.st.diff)}</td><td class="r">${fmt(r.bal)}</td></tr>`}).join('')}</table></div>`;
+    else body=years.map(y=>{const rs=rows.filter(r=>r.k.startsWith(y)).reverse();const ist=rs.reduce((a,r)=>a+r.st.ist,0),soll=rs.reduce((a,r)=>a+r.st.soll,0),br=rs.reduce((a,r)=>a+r.st.brutto,0);const max=Math.max(...rs.map(r=>Math.max(r.st.ist,r.st.soll)),1);
+      return `<div class="sec"><span>${y}</span></div><div class="card"><div class="kpis num"><div class="kpi"><div class="l">Ist</div><div class="v">${fmt(ist,0)}</div></div><div class="kpi"><div class="l">Soll</div><div class="v">${fmt(soll,0)}</div></div><div class="kpi"><div class="l">Brutto</div><div class="v" style="font-size:16px;padding-top:5px">${eur(br)}</div></div></div>
+      <table class="num" style="margin-top:12px">${rs.map(r=>`<tr><td style="width:46px">${MON[r.k.slice(5)-1].slice(0,3)}</td><td><div class="bar" style="margin:0"><i style="width:${r.st.ist/max*100}%"></i></div></td><td class="r" style="width:64px">${fmt(r.st.ist,1)}</td></tr>`).join('')}</table></div>`}).join('');
   } else {
-    const type=sub==='urlaub'?'Urlaub':'Krankheit';
+    const type=tab==='urlaub'?'Urlaub':'Krankheit';
     const ys=[...new Set([String(new Date().getFullYear()),...years])].sort().reverse();
     body=ys.map(y=>{const l=DB.entries.filter(e=>e.type===type&&e.date.startsWith(y)).sort((a,b)=>b.date.localeCompare(a.date));const n=new Set(l.map(e=>e.date)).size;
-      let head=`<h3>${y} – ${n} Tage</h3>`;
+      let head=`<div class="sec"><span>${y}</span><span>${n} ${n===1?'Tag':'Tage'}</span></div>`;
       if(type==='Urlaub'&&s.vacationPerYear){const carry=+((s.vacationCarry||{})[y]||0);const rest=s.vacationPerYear+carry-n;
-        head=`<div class="card" style="background:#f5a623;color:#222;margin-top:16px"><b style="font-size:18px">${y} · Resturlaub: ${fmt(rest)}</b><br><small>Urlaub: ${fmt(s.vacationPerYear)} · Übertrag Vorjahr: <input type="number" step="0.5" data-carry="${y}" value="${carry}" style="width:70px;padding:2px 6px;background:#fff;color:#222"> · Genommen: ${n}</small></div>`;}
-      return head+(l.map(e=>`<div class="daylbl" style="margin:8px 4px 4px"><span>${dlbl(e.date)}</span></div>${entryHtml(e)}`).join('')||'<p class="muted">Keine.</p>')}).join('');
+        head=`<div class="sec"><span>${y}</span></div><div class="card vac"><div class="hero" style="margin:0"><div><div class="muted" style="font-size:13px">Resturlaub</div><div class="big num">${fmt(rest)} Tage</div></div>
+        <div class="muted num" style="font-size:13px;text-align:right;line-height:1.9">Anspruch ${fmt(s.vacationPerYear)}<br>Übertrag <input type="number" step="0.5" data-carry="${y}" value="${carry}" style="width:64px;min-height:28px;padding:2px 6px;text-align:right"><br>Genommen ${n}</div></div></div>`;}
+      return head+(l.map(e=>`<div class="muted" style="font-size:12.5px;margin:10px 4px 4px">${dlbl(e.date)}</div>${entryHtml(e)}`).join('')||'<div class="empty">Keine Einträge.</div>')}).join('');
   }
-  M.innerHTML=`<div class="top"><button class="icon" id="back">←</button><h1>${titles[sub]}</h1></div><div class="wrap">${body}</div>`;
-  M.querySelector('#back').onclick=()=>{sub=null;render()};
-  M.querySelectorAll('[data-carry]').forEach(i=>i.onchange=()=>{s.vacationCarry=s.vacationCarry||{};s.vacationCarry[i.dataset.carry]=parseFloat(i.value)||0;save();render()});
+  M.innerHTML=topBar('Auswertung')+`<div class="wrap"><div class="tabs noprint">${[['ueber','Überstunden'],['jahre','Jahre'],['urlaub','Urlaub'],['krank','Krankheit']].map(([k,l])=>`<button data-t="${k}" class="${tab===k?'on':''}">${l}</button>`).join('')}</div>${body}</div>`;
+  M.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render()});
+  M.querySelectorAll('[data-carry]').forEach(i=>i.onchange=()=>{s.vacationCarry={...(s.vacationCarry||{}),[i.dataset.carry]:parseFloat(i.value)||0};saveSettings();render()});
   bindEntries();
 }
 
+// ---------- Ansicht: Einstellungen ----------
 function vEinst(){
   const s=DB.settings;
-  const wd=[1,2,3,4,5,6,0].map(d=>`<label style="display:inline-flex;gap:4px;align-items:center;margin:0 6px 0 0;color:var(--txt)"><input type="checkbox" style="width:auto" data-wd="${d}" ${s.workdays.includes(d)?'checked':''}>${WD[d]}</label>`).join('');
-  M.innerHTML=`<div class="top"><h1>Einstellungen</h1></div><div class="wrap">
-   <h3>Nutzerdaten</h3><div class="set">
+  let theme=''; try{theme=localStorage.getItem('zeit.theme')||''}catch(e){}
+  M.innerHTML=topBar('Einstellungen')+`<div class="wrap">
+   <div class="sec"><span>Person</span></div><div class="list">
     <div>Name<input data-k="name" value="${esc(s.name)}"></div>
     <div>Firma<input data-k="company" value="${esc(s.company)}"></div></div>
-   <h3>Stundenlohn (Verlauf – gilt ab Datum)</h3><div class="set">
-    ${s.rates.slice().sort((a,b)=>b.from.localeCompare(a.from)).map(r=>`<div>ab ${dlbl(r.from)}<span style="display:flex;gap:8px;align-items:center"><b>${fmt(r.rate)} €</b>${s.rates.length>1?`<button class="btn red" data-delrate="${r.from}">✕</button>`:''}</span></div>`).join('')}
-    <div><input type="date" id="rd" style="width:auto" value="${iso(new Date())}"><input type="number" step="0.01" id="rv" placeholder="€/Std." style="width:100px"><button class="btn" id="radd">＋ Neuer Lohn</button></div></div>
-   <h3>Meine Arbeitszeit</h3><div class="set">
-    <div>Standardbeginn<input data-k="defaultStart" type="time" value="${s.defaultStart}"></div>
-    <div>Standardende<input data-k="defaultEnd" type="time" value="${s.defaultEnd}"></div>
-    <div>Standardpause (Min.)<input data-k="defaultPause" type="number" value="${s.defaultPause}"></div>
+   <div class="sec"><span>Stundenlohn</span><span style="text-transform:none;letter-spacing:0;font-weight:500">gilt ab Datum</span></div><div class="list">
+    ${s.rates.slice().sort((a,b)=>b.from.localeCompare(a.from)).map(r=>`<div><span>ab ${dlbl(r.from)}</span><span style="display:flex;gap:10px;align-items:center"><b class="num">${eur(+r.rate)}</b>${s.rates.length>1?`<button class="btn small danger" data-delrate="${r.from}">Entfernen</button>`:''}</span></div>`).join('')}
+    <div class="wide"><input type="date" id="rd" style="width:auto;flex:1;text-align:left" value="${iso(new Date())}"><input type="number" step="0.01" id="rv" placeholder="€ / Std." style="width:110px"><button class="btn small" id="radd">Hinzufügen</button></div></div>
+   <div class="sec"><span>Arbeitszeit</span></div><div class="list">
     <div>Soll-Stunden pro Arbeitstag<input data-k="dailySoll" type="number" step="0.01" value="${s.dailySoll}"></div>
-    <div style="flex-wrap:wrap">Arbeitstage<span>${wd}</span></div>
-    <div>Soll zählt ab Datum<input data-k="startDate" type="date" value="${s.startDate}"></div>
-    <div>Urlaubstage pro Jahr<input data-k="vacationPerYear" type="number" value="${s.vacationPerYear}"></div>
+    <div class="wide"><span>Arbeitstage</span><span class="chips">${[1,2,3,4,5,6,0].map(d=>`<button class="chip ${s.workdays.includes(d)?'on':''}" data-wd="${d}">${WD[d]}</button>`).join('')}</span></div>
+    <div>Soll zählt ab<input data-k="startDate" type="date" value="${s.startDate}"></div>
+    <div>Vorschlag Beginn<input data-k="defaultStart" type="time" value="${s.defaultStart}"></div>
+    <div>Vorschlag Ende<input data-k="defaultEnd" type="time" value="${s.defaultEnd}"></div>
+    <div>Vorschlag Pause (Min.)<input data-k="defaultPause" type="number" min="0" step="5" value="${s.defaultPause}"></div>
+    <div>Urlaubstage pro Jahr<input data-k="vacationPerYear" type="number" step="0.5" value="${s.vacationPerYear}"></div>
     <div>Überstunden-Startsaldo<input data-k="overtimeStart" type="number" step="0.01" value="${s.overtimeStart}"></div></div>
-   <h3>Feiertage (an Arbeitstagen ohne Eintrag als bezahlte Stunden gutgeschrieben)</h3><div class="set" id="hol">
-    <div>Gesetzliche Feiertage<select data-k="holidayState" style="width:auto"><option value="NI" ${s.holidayState==='NI'?'selected':''}>Niedersachsen</option><option value="" ${!s.holidayState?'selected':''}>keine (nur eigene)</option></select></div>
-    <div class="muted" style="font-size:12px;display:block">${new Date().getFullYear()}: ${Object.entries(holidaysOf(new Date().getFullYear())).map(([d,n])=>n+' ('+d.slice(8)+'.'+d.slice(5,7)+'.)').join(', ')||'–'}</div>
-    ${s.holidays.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(h=>`<div>${dlbl(h.date)} · ${esc(h.name)}<button class="btn red" data-del="${h.date}">✕</button></div>`).join('')}
-    <div><input type="date" id="hd" style="width:auto"><input id="hn" placeholder="Name" style="width:auto;flex:1;text-align:left"><button class="btn" id="hadd">＋</button></div></div>
-   <h3>Daten</h3><div class="set">
-    <div>Alle Daten sichern (Backup)<button class="btn" id="exp">JSON speichern</button></div>
-    <div>Alle Einträge als Tabelle<button class="btn" id="expcsv">CSV speichern</button></div>
-    <div>Backup wiederherstellen<button class="btn" id="imp">JSON laden</button></div>
-    <div class="muted" style="font-size:12px">${DB.entries.length} Einträge gespeichert. Die Daten liegen nur in diesem Browser – regelmäßig ein Backup speichern!</div></div>
+   <div class="sec"><span>Feiertage</span></div><div class="list">
+    <div>Gesetzliche Feiertage<select data-k="holidayState"><option value="NI" ${s.holidayState==='NI'?'selected':''}>Niedersachsen</option><option value="" ${!s.holidayState?'selected':''}>keine</option></select></div>
+    <div class="muted" style="font-size:13px;display:block;line-height:1.6">Feiertage an Arbeitstagen ohne Eintrag werden mit den Soll-Stunden bezahlt gutgeschrieben.<br>${new Date().getFullYear()}: ${Object.entries(holidaysOf(new Date().getFullYear())).map(([d,n])=>esc(n)+' ('+d.slice(8)+'.'+d.slice(5,7)+'.)').join(', ')||'–'}</div>
+    ${(s.holidays||[]).slice().sort((a,b)=>a.date.localeCompare(b.date)).map(h=>`<div><span>${dlbl(h.date)} · ${esc(h.name)}</span><button class="btn small danger" data-del="${h.date}">Entfernen</button></div>`).join('')}
+    <div class="wide"><input type="date" id="hd" style="width:auto;flex:1;text-align:left"><input id="hn" placeholder="Eigener Feiertag" style="width:auto;flex:2;text-align:left"><button class="btn small" id="hadd">Hinzufügen</button></div></div>
+   <div class="sec"><span>Darstellung</span></div><div class="list">
+    <div>Farbschema<select id="theme"><option value="" ${!theme?'selected':''}>Automatisch</option><option value="light" ${theme==='light'?'selected':''}>Hell</option><option value="dark" ${theme==='dark'?'selected':''}>Dunkel</option></select></div></div>
+   <div class="sec"><span>Daten</span></div><div class="list">
+    <div><span>Backup speichern<div class="muted" style="font-size:12.5px">Alle Einträge und Einstellungen als Datei</div></span><button class="btn small" id="exp">JSON</button></div>
+    <div><span>Tabelle für Excel</span><button class="btn small" id="expcsv">CSV</button></div>
+    <div><span>Backup einspielen<div class="muted" style="font-size:12.5px">Ersetzt alle Daten in der Datenbank</div></span><button class="btn small" id="imp">Datei wählen</button></div>
+    <div class="muted" style="font-size:13px">${DB.entries.length.toLocaleString('de-DE')} Einträge in der Datenbank</div></div>
+   <div class="sec"><span>Konto</span></div><div class="list">
+    <div><span>Angemeldet als</span><span class="muted" style="overflow-wrap:anywhere;text-align:right">${esc(USER.email)}</span></div>
+    <div><span>Passwort ändern</span><button class="btn small" id="pw">Ändern</button></div>
+    <div><span>Abmelden</span><button class="btn small danger" id="logout">Abmelden</button></div></div>
   </div>`;
-  M.querySelectorAll('[data-k]').forEach(i=>i.onchange=()=>{const k=i.dataset.k;s[k]=i.type==='number'?parseFloat(i.value)||0:i.value;save();if(k==='holidayState')render()});
-  M.querySelectorAll('[data-delrate]').forEach(b=>b.onclick=()=>{if(confirm('Diesen Lohnsatz löschen?')){s.rates=s.rates.filter(r=>r.from!==b.dataset.delrate);save();render()}});
-  M.querySelector('#radd').onclick=()=>{const d=M.querySelector('#rd').value,v=parseFloat(M.querySelector('#rv').value);if(!d||!v)return alert('Bitte Datum und Stundenlohn eingeben.');s.rates=s.rates.filter(r=>r.from!==d);s.rates.push({from:d,rate:v});save();render()};
-  M.querySelectorAll('[data-wd]').forEach(i=>i.onchange=()=>{s.workdays=[...M.querySelectorAll('[data-wd]:checked')].map(x=>+x.dataset.wd);save()});
-  M.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{s.holidays=s.holidays.filter(h=>h.date!==b.dataset.del);save();render()});
-  M.querySelector('#hadd').onclick=()=>{const d=M.querySelector('#hd').value;if(!d)return;s.holidays.push({date:d,name:M.querySelector('#hn').value||'Feiertag'});save();render()};
-  M.querySelector('#exp').onclick=()=>download(JSON.stringify(DB,null,1),`Zeiterfassung_Backup_${iso(new Date())}.json`,'application/json');
+  M.querySelectorAll('[data-k]').forEach(i=>i.onchange=()=>{const k=i.dataset.k;s[k]=i.type==='number'?parseFloat(i.value)||0:i.value;saveSettings();if(k==='holidayState')render()});
+  M.querySelectorAll('[data-delrate]').forEach(b=>b.onclick=()=>{if(confirm('Diesen Stundenlohn entfernen?')){s.rates=s.rates.filter(r=>r.from!==b.dataset.delrate);saveSettings();render()}});
+  M.querySelector('#radd').onclick=()=>{const d=M.querySelector('#rd').value,v=parseFloat(M.querySelector('#rv').value);if(!d||!v)return toast('Bitte Datum und Stundenlohn eingeben');s.rates=s.rates.filter(r=>r.from!==d);s.rates.push({from:d,rate:v});saveSettings();render()};
+  M.querySelectorAll('[data-wd]').forEach(b=>b.onclick=()=>{const d=+b.dataset.wd;s.workdays=s.workdays.includes(d)?s.workdays.filter(x=>x!==d):[...s.workdays,d];saveSettings();render()});
+  M.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{s.holidays=s.holidays.filter(h=>h.date!==b.dataset.del);saveSettings();render()});
+  M.querySelector('#hadd').onclick=()=>{const d=M.querySelector('#hd').value;if(!d)return toast('Bitte Datum wählen');s.holidays=[...(s.holidays||[]),{date:d,name:M.querySelector('#hn').value||'Feiertag'}];saveSettings();render()};
+  M.querySelector('#theme').onchange=e=>{try{e.target.value?localStorage.setItem('zeit.theme',e.target.value):localStorage.removeItem('zeit.theme')}catch(x){}applyTheme()};
+  M.querySelector('#exp').onclick=()=>download(JSON.stringify({settings:DB.settings,entries:DB.entries,meta:{exported:new Date().toISOString()}},null,1),`Zeiterfassung_Backup_${iso(new Date())}.json`,'application/json');
   M.querySelector('#expcsv').onclick=()=>downloadCsv(DB.entries,'Zeiterfassung_alle.csv');
   M.querySelector('#imp').onclick=()=>document.getElementById('fileIn').click();
+  M.querySelector('#pw').onclick=()=>passwordDialog(false);
+  M.querySelector('#logout').onclick=async()=>{if(!confirm('Abmelden?'))return;try{localStorage.removeItem(cacheKey())}catch(e){}await sb.auth.signOut();};
 }
-document.getElementById('fileIn').onchange=async ev=>{
-  const f=ev.target.files[0]; if(!f)return;
-  try{const d=JSON.parse(await f.text()); if(!Array.isArray(d.entries))throw new Error('Keine gültige Sicherung');
-    if(!confirm(`Sicherung mit ${d.entries.length} Einträgen laden? Die aktuellen Daten werden ersetzt.`))return;
-    DB=d; DB.settings={...DEFAULT_SETTINGS,...DB.settings}; save(); render(); alert('Wiederhergestellt.');
-  }catch(e){alert('Fehler: '+e.message)} ev.target.value='';
-};
+function applyTheme(){let t='';try{t=localStorage.getItem('zeit.theme')||''}catch(e){} if(t)document.documentElement.dataset.theme=t; else delete document.documentElement.dataset.theme;}
+applyTheme();
 
-function download(text,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+document.getElementById('fileIn').onchange=async ev=>{
+  const f=ev.target.files[0]; ev.target.value=''; if(!f)return;
+  try{
+    const d=JSON.parse(await f.text()); if(!Array.isArray(d.entries))throw new Error('Keine gültige Sicherung');
+    if(!confirm(`Backup mit ${d.entries.length} Einträgen einspielen?\n\nAlle ${DB.entries.length} Einträge in der Datenbank werden dabei ersetzt.`))return;
+    toast('Wird eingespielt…'); setSync('busy');
+    const del=await sb.from('entries').delete().eq('user_id',USER.id); if(del.error) throw del.error;
+    const rows=d.entries.map(e=>toRow({...e,id:e.id||uid()}));
+    for(let i=0;i<rows.length;i+=500){const r=await sb.from('entries').insert(rows.slice(i,i+500)); if(r.error) throw r.error; toast(`Eingespielt: ${Math.min(i+500,rows.length)} / ${rows.length}`)}
+    DB.settings={...DEFAULT_SETTINGS,...(d.settings||{})};
+    const r=await sb.from('settings').upsert({user_id:USER.id,data:DB.settings,updated_at:new Date().toISOString()}); if(r.error) throw r.error;
+    await fetchAll(); render(); toast(`Fertig: ${DB.entries.length} Einträge eingespielt`);
+  }catch(e){setSync('err'); alert('Fehler beim Einspielen: '+(e.message||e)); refresh(true);}
+};
+function download(text,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
 function downloadCsv(list,name){
   const rows=[['Datum','Wochentag','Art','Beginn','Ende','Pause (Min.)','Stunden','Grund','Beschreibung']];
   list.slice().sort((a,b)=>a.date.localeCompare(b.date)||(a.start||'').localeCompare(b.start||'')).forEach(e=>rows.push([e.date.split('-').reverse().join('.'),WD[parseIso(e.date).getDay()],e.type,e.start||'',e.end||'',e.pause||'',fmt(hours(e)),e.reason||'',e.note||'']));
@@ -334,38 +547,96 @@ function editEntry(e){
   const F=document.getElementById('dlgForm'), D=document.getElementById('dlg');
   const draw=()=>{
     const work=e.type==='Arbeit';
-    F.innerHTML=`<h2 style="margin:0 0 14px">${isNew?'Neuer Eintrag':'Eintrag bearbeiten'}</h2>
+    F.innerHTML=`<h2>${isNew?'Neuer Eintrag':'Eintrag bearbeiten'}</h2>
     <div class="seg">${['Arbeit','Urlaub','Krankheit'].map(t=>`<button type="button" data-t="${t}" class="${e.type===t?'on':''}">${t}</button>`).join('')}</div>
-    <div class="row"><div><label>${work||!isNew?'Datum':'Von'}</label><input type="date" id="f_date" value="${e.date}" required></div>
-     ${!work&&isNew?`<div><label>Bis</label><input type="date" id="f_to" value="${e.date}"></div>`:''}</div>
-    ${work?`<div class="row"><div><label>Beginn</label><input type="time" id="f_start" value="${e.start}" required></div><div><label>Ende</label><input type="time" id="f_end" value="${e.end}" required></div><div><label>Pause (Min.)</label><input type="number" id="f_pause" min="0" step="5" value="${e.pause||0}"></div></div>`
-     :`<div class="row"><div><label>Stunden pro Tag</label><input type="number" step="0.01" id="f_hours" value="${e.hours??s.dailySoll}"></div><div><label>Grund</label><input id="f_reason" value="${esc(e.reason||(e.type==='Urlaub'?'Ganzer Tag':''))}"></div></div>`}
-    <div style="margin-bottom:12px"><label>Beschreibung</label><textarea id="f_note" rows="3" maxlength="1000" style="resize:vertical">${esc(e.note)}</textarea></div>
-    <p id="f_sum" class="muted"></p>
-    <div style="display:flex;gap:8px;justify-content:space-between">${isNew?'<span></span>':'<button type="button" class="btn red" id="f_del">Löschen</button>'}
-     <span style="display:flex;gap:8px"><button type="button" class="btn" id="f_cancel">Abbrechen</button><button class="btn fill" id="f_ok">Speichern</button></span></div>`;
+    <div class="grid ${!work&&isNew?'g2':''}"><div><label for="f_date">${work||!isNew?'Datum':'Von'}</label><input type="date" id="f_date" value="${e.date}" required></div>
+     ${!work&&isNew?`<div><label for="f_to">Bis</label><input type="date" id="f_to" value="${e._to||e.date}"></div>`:''}</div>
+    ${work?`<div class="grid g3"><div><label for="f_start">Beginn</label><input type="time" id="f_start" value="${e.start}" required></div><div><label for="f_end">Ende</label><input type="time" id="f_end" value="${e.end}" required></div><div><label for="f_pause">Pause (Min.)</label><input type="number" inputmode="numeric" id="f_pause" min="0" step="5" value="${e.pause||0}"></div></div>`
+     :`<div class="grid g2"><div><label for="f_hours">Stunden pro Tag</label><input type="number" inputmode="decimal" step="0.01" id="f_hours" value="${e.hours??s.dailySoll}"></div><div><label for="f_reason">Grund</label><input id="f_reason" value="${esc(e.reason||(e.type==='Urlaub'?'Ganzer Tag':''))}"></div></div>`}
+    <div><label for="f_note">Beschreibung</label><textarea id="f_note" rows="3" maxlength="1000" style="resize:vertical" placeholder="Optional">${esc(e.note)}</textarea></div>
+    <div class="calc num" id="f_sum"></div>
+    <div class="actions">${isNew?'<span></span>':'<button type="button" class="btn danger" id="f_del">Löschen</button>'}
+     <span><button type="button" class="btn" id="f_cancel">Abbrechen</button><button class="btn pri" id="f_ok">Speichern</button></span></div>`;
     F.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{read();e.type=b.dataset.t;draw()});
     F.querySelector('#f_cancel').onclick=()=>D.close();
-    const del=F.querySelector('#f_del'); if(del) del.onclick=()=>{if(confirm('Eintrag wirklich löschen?')){DB.entries=DB.entries.filter(x=>x.id!==e.id);save();D.close();render()}};
-    const upd=()=>{read();F.querySelector('#f_sum').textContent=e.type==='Arbeit'&&e.start&&e.end?`= ${fmt(hours(e))} Std.`:''};
+    const del=F.querySelector('#f_del'); if(del) del.onclick=()=>{if(confirm('Eintrag wirklich löschen?')){D.close();deleteEntry(e.id)}};
+    const upd=()=>{read();const el=F.querySelector('#f_sum');
+      if(e.type==='Arbeit'&&e.start&&e.end) el.textContent=`= ${fmt(hours(e))} Stunden`;
+      else if(isNew&&e._to&&e._to>e.date){let n=0;for(let d=parseIso(e.date);iso(d)<=e._to;d.setDate(d.getDate()+1))if(isWorkday(d))n++;el.textContent=`${n} Arbeitstage werden eingetragen`}
+      else el.textContent='';};
     F.querySelectorAll('input').forEach(i=>i.oninput=upd); upd();
   };
-  const read=()=>{const v=id=>F.querySelector('#'+id)?.value;
-    e.date=v('f_date')||e.date; e.note=v('f_note')??e.note;
-    if(e.type==='Arbeit'){e.start=v('f_start')||e.start||s.defaultStart;e.end=v('f_end')||e.end||s.defaultEnd;e.pause=parseInt(v('f_pause')||e.pause||0)||0;delete e.hours;delete e.reason}
-    else{e.hours=parseFloat(v('f_hours')??e.hours??s.dailySoll);e.reason=v('f_reason')??e.reason;e._to=v('f_to')}};
+  const read=()=>{const v=id=>{const el=F.querySelector('#'+id);return el?el.value:undefined};
+    e.date=v('f_date')||e.date; const n=v('f_note'); if(n!==undefined)e.note=n;
+    if(e.type==='Arbeit'){e.start=v('f_start')||e.start||s.defaultStart;e.end=v('f_end')||e.end||s.defaultEnd;const p=v('f_pause');e.pause=parseInt(p!==undefined?p:(e.pause||0))||0;delete e.hours;delete e.reason}
+    else{const h=v('f_hours');e.hours=parseFloat(h!==undefined?h:(e.hours??s.dailySoll));const r=v('f_reason');if(r!==undefined)e.reason=r;const t=v('f_to');if(t!==undefined)e._to=t}};
   F.onsubmit=ev=>{ev.preventDefault();read();
     const base={...e}; delete base._to;
-    if(e.type!=='Arbeit'){delete base.start;delete base.end;delete base.pause}
+    if(base.type==='Arbeit'&&(!base.start||!base.end)) return toast('Bitte Beginn und Ende angeben');
+    if(base.type!=='Arbeit'){delete base.start;delete base.end;delete base.pause;if(isNaN(base.hours))base.hours=s.dailySoll}
+    let changed=[];
     if(isNew&&e.type!=='Arbeit'&&e._to&&e._to>e.date){
-      for(let d=parseIso(e.date);iso(d)<=e._to;d.setDate(d.getDate()+1)){ if(isWorkday(d)) DB.entries.push({...base,id:uid(),date:iso(d)}); }
-    } else { const i=DB.entries.findIndex(x=>x.id===e.id); if(i>=0)DB.entries[i]=base; else DB.entries.push(base); }
-    save(); D.close(); selDate=e.date; render();
+      for(let d=parseIso(e.date);iso(d)<=e._to;d.setDate(d.getDate()+1)){ if(isWorkday(d)) changed.push({...base,id:uid(),date:iso(d)}); }
+      if(!changed.length) return toast('Keine Arbeitstage im Zeitraum');
+      DB.entries.push(...changed);
+    } else { const i=DB.entries.findIndex(x=>x.id===base.id); if(i>=0)DB.entries[i]=base; else DB.entries.push(base); changed=[base]; }
+    D.close(); selDate=base.date; render();
+    saveEntries(changed).then(ok=>ok&&toast(changed.length>1?changed.length+' Einträge gespeichert':'Gespeichert'));
   };
   draw(); D.showModal();
 }
 
-load(); render();
+// ---------- Passwort ----------
+function passwordDialog(recovery){
+  const F=document.getElementById('dlgForm'), D=document.getElementById('dlg');
+  F.innerHTML=`<h2>${recovery?'Neues Passwort festlegen':'Passwort ändern'}</h2>
+   <div class="grid"><div><label for="p1">Neues Passwort</label><input type="password" id="p1" minlength="8" autocomplete="new-password" required></div>
+   <div><label for="p2">Wiederholen</label><input type="password" id="p2" minlength="8" autocomplete="new-password" required></div></div>
+   <div class="calc" id="pmsg" style="color:var(--mut);font-weight:500;font-size:13px">Mindestens 8 Zeichen.</div>
+   <div class="actions"><span></span><span><button type="button" class="btn" id="pc">Abbrechen</button><button class="btn pri">Speichern</button></span></div>`;
+  F.querySelector('#pc').onclick=()=>D.close();
+  F.onsubmit=async ev=>{ev.preventDefault();const a=F.querySelector('#p1').value,b=F.querySelector('#p2').value;
+    if(a!==b) return F.querySelector('#pmsg').textContent='Die Passwörter stimmen nicht überein.';
+    const {error}=await sb.auth.updateUser({password:a});
+    if(error) return F.querySelector('#pmsg').textContent='Fehler: '+error.message;
+    D.close(); toast('Passwort geändert');};
+  D.showModal();
+}
+
+// ---------- Anmeldung ----------
+function vLogin(msg=''){
+  M=null;
+  R.innerHTML=`<div class="login"><div class="box"><img src="icon.svg" alt=""><h1>Zeiterfassung</h1><p class="muted">Bitte anmelden</p>
+   <form class="card" id="lf"><div class="grid"><div><label for="le">E-Mail</label><input type="email" id="le" autocomplete="username" required></div>
+   <div><label for="lp">Passwort</label><input type="password" id="lp" autocomplete="current-password" required></div></div>
+   <button class="btn pri" style="width:100%;min-height:46px">Anmelden</button>
+   <div style="text-align:center;margin-top:8px"><button type="button" class="linkbtn" id="forgot">Passwort vergessen?</button></div>
+   <div class="msg" id="lm">${esc(msg)}</div></form></div></div>`;
+  const lm=document.getElementById('lm');
+  document.getElementById('lf').onsubmit=async ev=>{ev.preventDefault();lm.className='msg';lm.textContent='Anmeldung…';
+    const {error}=await sb.auth.signInWithPassword({email:document.getElementById('le').value.trim(),password:document.getElementById('lp').value});
+    if(error){lm.className='msg err';lm.textContent=/invalid/i.test(error.message)?'E-Mail oder Passwort falsch.':error.message;}};
+  document.getElementById('forgot').onclick=async()=>{const em=document.getElementById('le').value.trim();
+    if(!em){lm.className='msg err';lm.textContent='Bitte zuerst die E-Mail-Adresse eintragen.';return}
+    const {error}=await sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});
+    lm.className=error?'msg err':'msg';lm.textContent=error?error.message:'Falls ein Konto existiert, wurde eine E-Mail zum Zurücksetzen verschickt.';};
+}
+let booted=null;
+async function boot(user){
+  if(booted===user.id) return; booted=user.id; USER=user;
+  const had=cacheLoad(); shell(); render();
+  if(!had) M.innerHTML=topBar('Zeiterfassung')+'<div class="wrap"><div class="empty">Daten werden geladen…</div></div>';
+  await refresh(false);
+}
+sb.auth.onAuthStateChange((event,session)=>{
+  setTimeout(()=>{ // außerhalb des Auth-Callbacks weiterarbeiten
+    if(event==='PASSWORD_RECOVERY'&&session){boot(session.user).then(()=>passwordDialog(true));return}
+    if(session&&session.user) boot(session.user);
+    else if(event!=='TOKEN_REFRESHED'){booted=null;USER=null;M=null;DB={settings:{...DEFAULT_SETTINGS},entries:[]};vLogin();}
+  },0);
+});
+// Beim Zurückkehren zur App (z. B. am Handy) Änderungen vom anderen Gerät holen
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&USER&&Date.now()-lastFetch>30000&&!document.getElementById('dlg').open)refresh(true)});
 </script>
 </body>
 </html>
