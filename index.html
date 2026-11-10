@@ -95,6 +95,7 @@ main{flex:1;min-width:0;padding-bottom:40px}
 .entry .body{flex:1;min-width:0}
 .entry .t{font-weight:600}
 .entry .s{font-size:13px;color:var(--mut)}
+.entry .tag{display:inline-block;font-size:11px;font-weight:600;padding:0 7px;border-radius:99px;border:1px solid var(--hol);color:var(--hol);margin-left:6px;vertical-align:1px}
 .entry .note{font-size:13.5px;margin-top:5px;white-space:pre-wrap;overflow-wrap:anywhere}
 .entry .h{font-weight:700;font-size:16px;white-space:nowrap}
 .empty{text-align:center;color:var(--mut);padding:32px 12px;border:1.5px dashed var(--line);border-radius:var(--r)}
@@ -284,6 +285,7 @@ const MON=['Januar','Februar','März','April','Mai','Juni','Juli','August','Sept
 const WD=['So','Mo','Di','Mi','Do','Fr','Sa'];
 const WDL=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
 const fmt=(n,d=2)=>(Math.round(n*100)/100).toLocaleString('de-DE',{minimumFractionDigits:0,maximumFractionDigits:d});
+const hmin=h=>{const m=Math.round(h*60);return Math.floor(m/60)+':'+pad(m%60)};
 const fmtS=n=>(Math.round(n*100)>0?'+':'')+fmt(n);
 const eur=n=>n.toLocaleString('de-DE',{style:'currency',currency:'EUR'});
 const dlbl=s=>{const d=parseIso(s);return WD[d.getDay()]+'., '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()};
@@ -307,6 +309,8 @@ function holidaysOf(y){
   return _hol[key]=r;
 }
 const isHoliday=s=>holidaysOf(+s.slice(0,4))[s]||((DB.settings.holidays||[]).find(h=>h.date===s)||{}).name||'';
+// Sonn-/Feiertagszuschlag: liefert 'Sonntag' bzw. den Feiertagsnamen, sonst ''. Maßgeblich ist das Datum des Eintrags.
+const sfName=s=>isHoliday(s)||(parseIso(s).getDay()===0?'Sonntag':'');
 function isWorkday(d){return DB.settings.workdays.includes(d.getDay())&&!isHoliday(iso(d))}
 const LOHN_ORDER=['Zeitlohn','Urlaubslohn','Krankheitslohn','Feiertagslohn'];
 function monthStats(y,m){
@@ -327,7 +331,10 @@ function monthStats(y,m){
   const rows=Object.entries(lohn).map(([k,h])=>{const[name,rate]=k.split('|');return{name,rate:+rate,h:r2(h),betrag:r2(r2(h)*rate)}})
     .sort((a,b)=>LOHN_ORDER.indexOf(a.name)-LOHN_ORDER.indexOf(b.name)||a.rate-b.rate);
   const ist=rows.reduce((a,r)=>a+r.h,0);
-  return {list,rows,feiertage,soll:r2(soll),ist:r2(ist),diff:r2(ist-soll),brutto:r2(rows.reduce((a,r)=>a+r.betrag,0)),
+  // Gearbeitete Stunden an Sonn- und Feiertagen (Grundlage für den Zuschlag), je Tag zusammengefasst
+  const sfMap={}; list.forEach(e=>{if(e.type==='Arbeit'&&sfName(e.date))sfMap[e.date]=(sfMap[e.date]||0)+hours(e)});
+  const sfTage=Object.keys(sfMap).sort().map(d=>({date:d,name:sfName(d),h:r2(sfMap[d])}));
+  return {list,rows,feiertage,sfTage,sfStd:r2(sfTage.reduce((a,t)=>a+t.h,0)),soll:r2(soll),ist:r2(ist),diff:r2(ist-soll),brutto:r2(rows.reduce((a,r)=>a+r.betrag,0)),
     urlaub:new Set(list.filter(e=>e.type==='Urlaub').map(e=>e.date)).size,krank:new Set(list.filter(e=>e.type==='Krankheit').map(e=>e.date)).size};
 }
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -364,7 +371,7 @@ function render(){
 
 function entryHtml(e){
   const line=e.type==='Arbeit'?`${e.start} – ${e.end}${e.pause?' · Pause '+pauseLbl(e.pause):''}`:(e.reason||'Ganzer Tag');
-  return `<button class="entry ${e.type}" data-id="${esc(e.id)}"><span class="stripe"></span><span class="body"><div class="t">${e.type}</div><div class="s num">${esc(line)}</div>${e.note?`<div class="note">${esc(e.note)}</div>`:''}</span><span class="h num">${fmt(hours(e))} h</span></button>`;
+  return `<button class="entry ${e.type}" data-id="${esc(e.id)}"><span class="stripe"></span><span class="body"><div class="t">${e.type}${e.type==='Arbeit'&&sfName(e.date)?`<span class="tag">${esc(sfName(e.date))}</span>`:''}</div><div class="s num">${esc(line)}</div>${e.note?`<div class="note">${esc(e.note)}</div>`:''}</span><span class="h num">${fmt(hours(e))} h</span></button>`;
 }
 const holidayHtml=d=>`<div class="entry Feiertag"><span class="stripe"></span><span class="body"><div class="t">Feiertag</div><div class="s">${esc(isHoliday(d))}</div></span><span class="h num">${fmt(DB.settings.dailySoll)} h</span></div>`;
 function bindEntries(){M.querySelectorAll('button.entry').forEach(el=>el.onclick=()=>editEntry(DB.entries.find(e=>e.id===el.dataset.id)));}
@@ -411,7 +418,7 @@ function vMonate(){
     const pct=st.soll?Math.min(100,st.ist/st.soll*100):0; const head=String(y)!==lastY?`<div class="sec"><span>${y}</span></div>`:''; lastY=String(y);
     return `${head}<button class="mcard" data-k="${k}"><div class="row1"><b>${MON[m-1]}</b><span class="num ${st.diff>=0?'pos':'neg'}" style="font-weight:700">${fmtS(st.diff)} h</span></div>
       <div class="bar"><i style="width:${pct}%"></i></div>
-      <div class="row2 num"><span>${fmt(st.ist)} von ${fmt(st.soll)} Std.</span><span>${eur(st.brutto)}</span></div></button>`}).join('')}</div>`;
+      <div class="row2 num"><span>${fmt(st.ist)} von ${fmt(st.soll)} Std.</span>${st.sfStd?`<span>So/Feiertag ${fmt(st.sfStd)} Std.</span>`:''}<span>${eur(st.brutto)}</span></div></button>`}).join('')}</div>`;
   M.querySelectorAll('.mcard').forEach(el=>el.onclick=()=>{monthOpen=el.dataset.k;render();window.scrollTo(0,0)});
 }
 function vMonat(){
@@ -428,6 +435,12 @@ function vMonat(){
     ${st.rows.map(r=>`<tr><td>${r.name}</td><td class="r">${fmt(r.h)}</td><td class="r">${fmt(r.rate)}</td><td class="r">${eur(r.betrag)}</td></tr>`).join('')}
     <tr><td colspan="3"><b>Gesamt</b></td><td class="r"><b>${eur(st.brutto)}</b></td></tr></table>
     <p class="muted" style="font-size:12.5px;margin:10px 0 0">Urlaub ${st.urlaub} Tg. · Krank ${st.krank} Tg. · Feiertage ${st.feiertage.length} · ohne Zuschläge</p></div>
+   <div class="card"><h2>Sonn- und Feiertagsarbeit</h2>
+    ${st.sfTage.length?`<table class="num"><tr><th>Tag</th><th>Art</th><th class="r">Std.</th><th class="r">Std:Min</th></tr>
+    ${st.sfTage.map(t=>`<tr><td>${dlbl(t.date)}</td><td>${esc(t.name)}</td><td class="r">${fmt(t.h)}</td><td class="r">${hmin(t.h)}</td></tr>`).join('')}
+    <tr><td colspan="2"><b>Stunden mit Zuschlag</b></td><td class="r"><b>${fmt(st.sfStd)}</b></td><td class="r"><b>${hmin(st.sfStd)}</b></td></tr></table>`
+    :'<p class="muted" style="margin:0">In diesem Monat wurde an keinem Sonntag oder Feiertag gearbeitet.</p>'}
+    <p class="muted" style="font-size:12.5px;margin:10px 0 0">Gezählt wird die Arbeitszeit ohne Pausen an Sonntagen und gesetzlichen Feiertagen (Niedersachsen). Urlaub und Krankheit zählen nicht.</p></div>
    ${days.map(d=>{const l=(byDay[d]||[]).sort((a,b)=>(a.start||'').localeCompare(b.start||''));const sum=l.reduce((a,e)=>a+hours(e),0);
      return `<div class="sec"><span>${dlbl(d)}</span><span class="num">${l.length>1?fmt(sum)+' Std.':''}</span></div>${st.feiertage.includes(d)?holidayHtml(d):''}${l.map(entryHtml).join('')}`}).join('')||'<div class="empty">Keine Einträge in diesem Monat.</div>'}
   </div>`;
