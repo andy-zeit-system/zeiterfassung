@@ -146,6 +146,36 @@ main{flex:1;min-width:0;padding-bottom:40px}
 .hero{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:14px}
 .big{font-size:30px;font-weight:800;letter-spacing:-.02em}
 table{width:100%;border-collapse:collapse;font-size:14px}
+/* Liste: alle Einträge als Tabelle, am PC breiter */
+.wide .wrap{max-width:1240px}
+.wide .top{padding-left:max(24px,calc((100% - 1240px)/2 + 24px));padding-right:max(24px,calc((100% - 1240px)/2 + 24px))}
+.lfilter{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 12px}
+.lfilter label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:0 0 4px}
+.lsum{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--mut);margin:0 0 10px}
+.lsum b{color:var(--txt)}
+.lscroll{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.ltab{min-width:540px;font-size:14px}
+.ltab td.num{white-space:nowrap}
+.ltab thead th{position:sticky;top:0;background:var(--surface);padding:10px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.ltab th button{font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;background:none;border:0;padding:0;cursor:pointer}
+.ltab td{padding:9px 10px;vertical-align:top}
+.ltab tbody tr{cursor:pointer}
+.ltab tbody tr:hover td{background:var(--surface2)}
+.ltab tbody tr:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
+.ltab tr.newday td{border-top:2px solid var(--line)}
+.ltab td.note{white-space:normal;min-width:160px;overflow-wrap:anywhere;color:var(--txt)}
+.ltab td.muted{color:var(--mut)}
+.ltab .art{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.ltab .art i{width:8px;height:8px;border-radius:50%;background:var(--work)}
+.ltab .art.Urlaub i{background:var(--vac)}.ltab .art.Krankheit i{background:var(--sick)}
+.ltab tfoot td{border-top:2px solid var(--line);font-weight:700}
+.ltab tr.lweek td{background:var(--surface2);font-size:12px;font-weight:700;letter-spacing:.03em;padding:6px 10px;border-top:1px solid var(--line)}
+.ltab tr.lweek .muted{font-weight:500;color:var(--mut)}
+.ltab td.sf{color:var(--sick);font-weight:600}
+.ltab .hol-n{font-size:12px;font-weight:600;color:var(--hol);white-space:nowrap}
+.ltab mark{background:var(--acc-soft);color:var(--txt);border-radius:3px;padding:0 2px;box-shadow:inset 0 -2px 0 var(--acc)}
+.ltab .d-short,.ltab .rb-m,.ltab .t-m,.ltab .u-m{display:none}
+.ltab .rb-m{color:var(--mut)}
 th{font-size:11px;color:var(--mut);text-align:left;font-weight:600;padding:6px 4px;text-transform:uppercase;letter-spacing:.04em}
 td{padding:8px 4px;border-top:1px solid var(--line)}
 td.r,th.r{text-align:right}
@@ -215,6 +245,23 @@ label{display:block;font-size:12.5px;font-weight:600;color:var(--mut);margin-bot
   dialog{width:100vw;max-width:100vw;margin:auto 0 0;border-radius:20px 20px 0 0;max-height:94vh}
   dialog form{padding:20px 16px calc(20px + env(safe-area-inset-bottom))}
   .list input,.list select{width:130px}
+  .lfilter{grid-template-columns:1fr 1fr}.lfilter .lq{grid-column:span 2}
+  /* Liste am Handy: jede Zeile als Raster – oben Datum, Zeiten, Stunden; darunter die Beschreibung in voller Breite */
+  .lscroll{overflow:visible}
+  .ltab,.ltab tbody,.ltab tfoot{display:block;min-width:0}
+  .ltab thead,.ltab .c-tag,.ltab .c-pause,.ltab .c-rb,.ltab .c-x,.ltab .d-full,.ltab .art-l{display:none}
+  .ltab .d-short,.ltab .rb-m,.ltab .t-m,.ltab .u-m{display:inline}
+  .ltab tr{display:grid;grid-template-columns:86px 18px 1fr 1fr 64px;align-items:baseline;border-top:1px solid var(--line)}
+  .ltab tr.newday{border-top:2px solid var(--line)}
+  .ltab td,.ltab tr.newday td,.ltab tfoot td{border:0;padding:10px 6px 4px}
+  .ltab td:first-child{padding-left:12px}
+  .ltab td.note{grid-column:1/-1;padding:0 12px 10px;min-width:0;color:var(--mut)}
+  .ltab td.note:empty{display:none}
+  .ltab tr[data-id]{padding-bottom:6px}
+  .ltab tr.lweek,.ltab tfoot tr{grid-template-columns:1fr auto}
+  .ltab tr.lweek td,.ltab tfoot td{padding:8px 12px}
+  .ltab tr.lempty{display:block}
+}
 }
 @media (max-width:400px){.g3{grid-template-columns:1fr 1fr}.g3>div:last-child{grid-column:span 2}.kpi .v{font-size:18px}.big{font-size:26px}}
 @media print{
@@ -251,6 +298,7 @@ const IC={
   left:svg('<path d="M15 18l-6-6 6-6"/>'),
   right:svg('<path d="M9 18l6-6-6-6"/>'),
   back:svg('<path d="M19 12H5M12 19l-7-7 7-7"/>'),
+  list:svg('<path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/>'),
 };
 
 // ---------- Daten ----------
@@ -467,7 +515,7 @@ let toastT; function toast(t){const el=document.getElementById('toast');el.textC
 // ---------- Grundgerüst ----------
 const R=document.getElementById('root');
 let view='zeit', selDate=iso(new Date()), monthOpen=null, tab='ueber', M=null;
-const NAV=[['zeit','Zeiten',IC.clock],['monate','Monate',IC.cal],['auswertung','Auswertung',IC.chart],['einst','Einstellungen',IC.gear]];
+const NAV=[['zeit','Zeiten',IC.clock],['liste','Liste',IC.list],['monate','Monate',IC.cal],['auswertung','Auswertung',IC.chart],['einst','Einstellungen',IC.gear]];
 function shell(){
   R.innerHTML=`<div class="app"><nav class="side">
     <div class="brand"><img src="icon.svg" alt="">Zeiterfassung</div>
@@ -490,7 +538,9 @@ function render(){
   if(view==='zeit') vZeit();
   else if(view==='monate') monthOpen?vMonat():vMonate();
   else if(view==='auswertung') vAuswertung();
+  else if(view==='liste') vListe();
   else vEinst();
+  M.classList.toggle('wide',view==='liste');
   bindSync();
 }
 
@@ -615,6 +665,88 @@ function vMonat(){
   M.querySelector('#pdf').onclick=()=>window.print();
   M.querySelector('#csv').onclick=()=>downloadCsv(st.list,`Zeiterfassung_${monthOpen}.csv`);
   bindEntries();
+}
+
+// ---------- Ansicht: Liste ----------
+// Alle Einträge als Tabelle mit allen Spalten. Zeitraum-Schnellwahl, Filter nach Art, Suche mit Treffer-Markierung,
+// Zwischensummen je Kalenderwoche, Summen für die Auswahl. Am Handy fallen Nebenspalten weg (kein seitliches Scrollen).
+// Beim Tippen in die Suche wird nur der Tabelleninhalt neu gezeichnet (Fokus bleibt im Feld).
+let LF={r:'m:'+iso(new Date()).slice(0,7),t:'',q:'',dir:-1};
+const RB_SHORT={ueb:'übernommen',voll:'ja',abg:'abgegeben'};
+const isoWeek=d=>{d=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()+4-n);const y=new Date(Date.UTC(d.getUTCFullYear(),0,1));return {kw:Math.ceil(((d-y)/864e5+1)/7),year:d.getUTCFullYear()}};
+const weekStart=d=>{const m=new Date(d);m.setDate(d.getDate()-((d.getDay()+6)%7));return m};
+function listRange(){ // [von, bis] als ISO-Datum; leer = offen
+  const now=new Date(), [k,v]=LF.r.split(':');
+  if(k==='w'){const a=weekStart(now), b=new Date(a);b.setDate(a.getDate()+6);return [iso(a),iso(b)]}
+  if(k==='m'){const[y,m]=v.split('-').map(Number);return [iso(new Date(y,m-1,1)),iso(new Date(y,m,0))]}
+  if(k==='y') return [v+'-01-01',v+'-12-31'];
+  return ['',''];
+}
+function listFiltered(){
+  const q=LF.q.trim().toLowerCase(), [a,b]=listRange();
+  return DB.entries.filter(e=>(!a||e.date>=a)&&(!b||e.date<=b)&&(!LF.t||e.type===LF.t)
+      &&(!q||[e.note,e.reason,e.type,dlbl(e.date)].some(v=>String(v||'').toLowerCase().includes(q))))
+    .sort((x,y)=>LF.dir*x.date.localeCompare(y.date)||(x.start||'').localeCompare(y.start||'')); // Tage nach Wahl, innerhalb des Tages früh -> spät
+}
+// Suchtreffer hervorheben (auf bereits maskiertem Text, Suchtext ebenfalls maskiert)
+function hl(text){
+  const t=esc(text), q=esc(LF.q.trim()); if(!q) return t;
+  const re=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
+  return t.replace(re,m=>`<mark>${m}</mark>`);
+}
+function listBody(){
+  const list=listFiltered(); let prevDay='', prevWeek='';
+  const weekSum={}; list.forEach(e=>{const w=isoWeek(parseIso(e.date));const k=w.year+'-'+w.kw;weekSum[k]=(weekSum[k]||0)+hours(e)});
+  const rows=list.map(e=>{
+    const d=parseIso(e.date), w=isoWeek(d), wk=w.year+'-'+w.kw, first=e.date!==prevDay, work=e.type==='Arbeit', sf=sfName(e.date);
+    let head='';
+    if(wk!==prevWeek){const a=weekStart(d), b=new Date(a);b.setDate(a.getDate()+6);
+      head=`<tr class="lweek"><td colspan="4">KW ${w.kw} <span class="muted">· ${a.getDate()}.${a.getMonth()+1}.–${b.getDate()}.${b.getMonth()+1}.</span></td><td class="c-tag"></td><td class="c-pause"></td><td class="num r">${fmt(weekSum[wk])}<span class="u-m"> Std.</span></td><td colspan="2" class="c-x"></td></tr>`}
+    prevDay=e.date; prevWeek=wk; const rb=first?rbOf(e.date):'';
+    return head+`<tr tabindex="0" data-id="${esc(e.id)}" class="${first?'newday':''}">
+      <td class="num">${first?`<span class="d-full">${dlbl(e.date).slice(5)}</span><span class="d-short">${WD[d.getDay()]} ${pad(d.getDate())}.${pad(d.getMonth()+1)}.</span>`:''}</td>
+      <td class="c-tag ${sf?'sf':'muted'}" ${sf?`title="${esc(sf)}"`:''}>${first?WD[d.getDay()]:''}</td>
+      <td><span class="art ${e.type}"><i aria-hidden="true"></i><span class="art-l">${e.type}</span></span></td>
+      <td class="num">${work?e.start:`<span class="t-m">${e.type}</span>`}</td><td class="num">${work?e.end:''}</td><td class="num r c-pause">${work&&e.pause?e.pause+' Min.':''}</td>
+      <td class="num r"><b>${fmt(hours(e))}</b></td>
+      <td class="muted c-rb">${rb?RB_SHORT[rb]||'':''}</td>
+      <td class="note">${first&&sf&&sf!=='Sonntag'?`<span class="hol-n">${esc(sf)}</span> `:''}${hl(work?e.note:[e.reason,e.note].filter(Boolean).join(' · '))}${rb?`<span class="rb-m"> · Rufbereitschaft ${RB_SHORT[rb]==='ja'?'':RB_SHORT[rb]}</span>`:''}</td></tr>`}).join('');
+  const days=t=>new Set(list.filter(e=>e.type===t).map(e=>e.date)).size;
+  const sum=list.reduce((a,e)=>a+hours(e),0), rbDays=new Set(list.map(e=>e.date).filter(d=>rbOf(d))).size;
+  return {rows:rows||`<tr class="lempty"><td colspan="9" class="muted" style="text-align:center;padding:28px">Keine Einträge für diese Auswahl.</td></tr>`,
+    foot:`<tr><td colspan="4">${list.length} ${list.length===1?'Eintrag':'Einträge'}</td><td class="c-tag"></td><td class="c-pause"></td><td class="num r">${fmt(sum)}<span class="u-m"> Std.</span></td><td colspan="2" class="c-x"></td></tr>`,
+    sum:`<span>Summe <b class="num">${fmt(sum)} Std.</b></span><span>Arbeitstage <b class="num">${days('Arbeit')}</b></span><span>Urlaub <b class="num">${days('Urlaub')}</b></span><span>Krank <b class="num">${days('Krankheit')}</b></span>${rbDays?`<span>Rufbereitschaft <b class="num">${rbDays}</b></span>`:''}`};
+}
+function vListe(){
+  const now=new Date(), cur=iso(now).slice(0,7), lastM=iso(new Date(now.getFullYear(),now.getMonth()-1,1)).slice(0,7);
+  const months=[...new Set(DB.entries.map(e=>e.date.slice(0,7)))].sort().reverse().filter(k=>k!==cur&&k!==lastM);
+  const years=[...new Set(DB.entries.map(e=>e.date.slice(0,4)).concat([String(now.getFullYear())]))].sort().reverse();
+  const mLbl=k=>{const[y,m]=k.split('-').map(Number);return MON[m-1]+' '+y};
+  const opt=(v,l)=>`<option value="${v}" ${v===LF.r?'selected':''}>${l}</option>`;
+  const b=listBody();
+  M.innerHTML=topBar('Alle Einträge',`<button class="btn small noprint" id="lprint">Drucken</button><button class="btn small noprint" id="lcsv">CSV</button>`)+`<div class="wrap">
+    <div class="lfilter noprint">
+      <div><label for="lr">Zeitraum</label><select id="lr">${opt('w','Diese Woche')}${opt('m:'+cur,'Dieser Monat')}${opt('m:'+lastM,'Letzter Monat')}
+        ${years.map(y=>opt('y:'+y,y===String(now.getFullYear())?'Dieses Jahr':'Jahr '+y)).join('')}${opt('a','Alle Einträge')}
+        ${months.length?`<optgroup label="Einzelne Monate">${months.map(k=>opt('m:'+k,mLbl(k))).join('')}</optgroup>`:''}</select></div>
+      <div><label for="lt">Art</label><select id="lt">${[['','Alle'],['Arbeit','Arbeit'],['Urlaub','Urlaub'],['Krankheit','Krankheit']].map(([v,l])=>`<option value="${v}" ${v===LF.t?'selected':''}>${l}</option>`).join('')}</select></div>
+      <div class="lq"><label for="lq">Suche in Beschreibung</label><input id="lq" type="search" placeholder="z. B. Lieferung" value="${esc(LF.q)}"></div>
+    </div>
+    <p class="lsum" id="lsum">${b.sum}</p>
+    <div class="lscroll"><table class="ltab"><thead><tr>
+      <th><button type="button" id="lsort" aria-label="Nach Datum sortieren, ${LF.dir<0?'neueste zuerst':'älteste zuerst'}">Datum ${LF.dir<0?'↓':'↑'}</button></th><th class="c-tag">Tag</th><th>Art</th><th>Beginn</th><th>Ende</th><th class="r c-pause">Pause</th><th class="r">Std.</th><th class="c-rb" title="Rufbereitschaft an diesem Tag">Rufbereit.</th><th>Beschreibung</th>
+    </tr></thead><tbody id="lbody">${b.rows}</tbody><tfoot id="lfoot">${b.foot}</tfoot></table></div>
+  </div>`;
+  const bindRows=()=>M.querySelectorAll('#lbody tr[data-id]').forEach(tr=>{const open=()=>editEntry(DB.entries.find(e=>e.id===tr.dataset.id));
+    tr.onclick=open; tr.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();open()}}});
+  const redraw=()=>{const r=listBody();M.querySelector('#lbody').innerHTML=r.rows;M.querySelector('#lfoot').innerHTML=r.foot;M.querySelector('#lsum').innerHTML=r.sum;bindRows()};
+  M.querySelector('#lr').onchange=ev=>{LF.r=ev.target.value;redraw()};
+  M.querySelector('#lt').onchange=ev=>{LF.t=ev.target.value;redraw()};
+  M.querySelector('#lq').oninput=ev=>{LF.q=ev.target.value;redraw()};
+  M.querySelector('#lsort').onclick=()=>{LF.dir=-LF.dir;render()};
+  M.querySelector('#lprint').onclick=()=>window.print();
+  M.querySelector('#lcsv').onclick=()=>downloadCsv(listFiltered(),`Zeiterfassung_${LF.r.replace(/^[a-z]:?/,'')||'Auswahl'}${LF.t?'_'+LF.t:''}.csv`);
+  bindRows();
 }
 
 // ---------- Ansicht: Auswertung ----------
