@@ -619,7 +619,8 @@ function editEntry(e){
   // Pausen-Erinnerung (Vorgabe vom 11.11.2026): ab 6 Std. Arbeit am Tag 30 Min., ab 9 Std. 45 Min. – die Grenzwerte selbst zählen schon mit.
   // Gezählt wird der ganze Tag: Pausen aller Arbeitseinträge plus Lücken zwischen ihnen. Nur Erinnerung, kein Zwang.
   const pauseCheck=b=>{const day=DB.entries.filter(x=>x.type==='Arbeit'&&x.date===b.date&&x.id!==b.id).concat([b]).map(x=>{let a=toMin(x.start),z=toMin(x.end);if(z<a)z+=1440;return{a,z,p:+x.pause||0}}).sort((p,q)=>p.a-q.a);
-    let gross=0,own=0,gaps=0;day.forEach((x,i)=>{gross+=x.z-x.a;own+=x.p;if(i)gaps+=Math.max(0,x.a-day[i-1].z)});
+    // Lücke = Zeit zwischen dem bisher spätesten Ende und dem nächsten Beginn. Überschneiden sich Einträge, entsteht keine Lücke.
+    let gross=0,own=0,gaps=0,maxEnd=-1;day.forEach((x,i)=>{gross+=x.z-x.a;own+=x.p;if(i)gaps+=Math.max(0,x.a-maxEnd);maxEnd=Math.max(maxEnd,x.z)});
     const work=gross-own,need=work>=540?45:work>=360?30:0,pause=own+gaps;
     return need&&pause<need?{work,need,pause,miss:need-pause,n:day.length}:null};
   const F=document.getElementById('dlgForm'), D=document.getElementById('dlg');
