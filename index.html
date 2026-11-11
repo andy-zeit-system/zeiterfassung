@@ -2,9 +2,6 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<!-- Sicherheit: erlaubt nur eigene Dateien, die Supabase-Bibliothek von jsdelivr und Verbindungen zur eigenen Supabase-Datenbank -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src https://qtidstkbbnddllkpthpb.supabase.co wss://qtidstkbbnddllkpthpb.supabase.co; manifest-src 'self'; base-uri 'none'; object-src 'none'">
-<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f766e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -23,12 +20,12 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0e1215;--surface:#161b1f;--surface2:#1d2429;--line:#283137;--txt:#e7ecef;--mut:#94a1ab;
   --acc:#2dd4bf;--acc-ink:#062b27;--acc-soft:#123430;
-  --work:#2dd4bf;--vac:#fbbf24;--sick:#f87171;--on-sick:#0e1215;--hol:#a78bfa;--pos:#4ade80;--neg:#fb923c;
+  --work:#2dd4bf;--vac:#fbbf24;--sick:#f87171;--hol:#a78bfa;--pos:#4ade80;--neg:#fb923c;
   --shadow:none;}}
 :root[data-theme="dark"]{
   --bg:#0e1215;--surface:#161b1f;--surface2:#1d2429;--line:#283137;--txt:#e7ecef;--mut:#94a1ab;
   --acc:#2dd4bf;--acc-ink:#062b27;--acc-soft:#123430;
-  --work:#2dd4bf;--vac:#fbbf24;--sick:#f87171;--on-sick:#0e1215;--hol:#a78bfa;--pos:#4ade80;--neg:#fb923c;--shadow:none;}
+  --work:#2dd4bf;--vac:#fbbf24;--sick:#f87171;--hol:#a78bfa;--pos:#4ade80;--neg:#fb923c;--shadow:none;}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
@@ -64,12 +61,8 @@ main{flex:1;min-width:0;padding-bottom:40px}
 .top h1 small{font-size:13px;color:var(--mut);font-weight:500}
 .wrap{max-width:760px;margin:0 auto;padding:0 24px}
 .sync{width:8px;height:8px;border-radius:50%;background:var(--pos);flex-shrink:0;margin-left:4px}
-.sync.busy{background:var(--vac);animation:pulse 1s infinite}
-.top{flex-wrap:wrap}
-.sync.wait{order:9;flex-basis:100%;width:auto;height:auto;min-height:44px;margin:4px 0 0;border-radius:10px;background:var(--sick);color:var(--on-sick,#fff);font-size:14px;font-weight:700;padding:8px 14px;border:0;text-align:left;cursor:pointer}
-.sync.wait:focus-visible{outline:2px solid var(--txt);outline-offset:2px}
+.sync.busy{background:var(--vac);animation:pulse 1s infinite}.sync.err{background:var(--sick)}
 @keyframes pulse{50%{opacity:.3}}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 /* Buttons */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;padding:9px 14px;font-weight:600;min-height:40px;background:var(--surface);border:1px solid var(--line);color:var(--txt);white-space:nowrap}
@@ -115,9 +108,6 @@ main{flex:1;min-width:0;padding-bottom:40px}
 .entry .note{font-size:13.5px;margin-top:5px;white-space:pre-wrap;overflow-wrap:anywhere}
 .entry .h{font-weight:700;font-size:16px;white-space:nowrap}
 .empty{text-align:center;color:var(--mut);padding:32px 12px;border:1.5px dashed var(--line);border-radius:var(--r)}
-.quick{display:flex;flex-direction:column;gap:10px;max-width:340px;margin:18px auto 0}
-.btn.big{flex-direction:column;gap:2px;min-height:60px;font-size:16px;white-space:normal}
-.btn.big small{font-size:13px;font-weight:500;opacity:.85}
 
 /* Monate */
 .mcard{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow)}
@@ -219,8 +209,7 @@ label{display:block;font-size:12.5px;font-weight:600;color:var(--mut);margin-bot
 <input type="file" id="fileIn" accept=".json,application/json" hidden>
 <div id="toast" role="status"></div>
 
-<!-- integrity = Prüfsumme: wird die Datei bei jsdelivr verändert, lädt der Browser sie nicht. Bei Versionswechsel neu berechnen. -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script>
 // ---------- Verbindung ----------
 // Öffentliche Projektangaben (kein Geheimnis). Die Daten sind durch Anmeldung + Row Level Security geschützt.
@@ -254,85 +243,13 @@ const fromRow=r=>r.type==='Arbeit'
   ?{id:r.id,date:r.date,type:r.type,start:(r.start_time||'').slice(0,5),end:(r.end_time||'').slice(0,5),pause:r.pause||0,note:r.note||''}
   :{id:r.id,date:r.date,type:r.type,hours:r.hours!=null?+r.hours:null,reason:r.reason||'',note:r.note||''};
 
-// ---------- Speichern mit Warteschlange ----------
-// Jede Änderung kommt zuerst in eine lokale Warteschlange (localStorage) und wird von dort an Supabase geschickt.
-// Klappt das nicht (Funkloch, Server weg), bleibt sie dort und wird automatisch nachgesendet:
-// bei "online", beim Zurückkehren zur App, alle 30 Sek. und per Knopf. Beim Laden vom Server werden
-// wartende Änderungen wieder über den Serverstand gelegt – so geht nichts verloren.
-// Lehnt der Server eine Änderung dauerhaft ab (Datenbank-Fehlercode), wird nur diese verworfen und gemeldet,
-// damit sie nicht alle anderen blockiert.
-const pendKey=()=>'zeit.pending.'+(USER&&USER.id);
-const RETRY_MS=30000, MAX_ROUNDS=5;
-let PEND={entries:{},settings:0}, flushP=null, sentSeq=0, SYNC='', SYNCMSG='';
-const opVer=()=>Date.now()+Math.random();
-function pendLoad(){try{const p=JSON.parse(localStorage.getItem(pendKey())||'null')||{};PEND={entries:p.entries||{},settings:p.settings||0}}catch(e){PEND={entries:{},settings:0}}}
-function pendSave(key=pendKey()){try{if(pendCount())localStorage.setItem(key,JSON.stringify(PEND));else localStorage.removeItem(key)}catch(e){}}
-const pendCount=()=>Object.keys(PEND.entries).length+(PEND.settings?1:0);
-function pendApply(){ // wartende Einträge über den Serverstand legen (neuere lokale Fassung gewinnt)
-  const ops=PEND.entries; if(!Object.keys(ops).length) return;
-  DB.entries=DB.entries.filter(x=>!(x.id in ops)).concat(Object.values(ops).filter(o=>o.op==='up').map(o=>o.e));
-}
-// Datenbank-Fehlercodes (SQLSTATE, z. B. 23514, 42501) sind dauerhaft; Netz-, Zeit- und Anmeldefehler nicht.
-const isPermErr=e=>!!e&&/^[0-9A-Z]{5}$/.test(String(e.code||''))&&!/^PGRST/.test(String(e.code));
-
-function syncHtml(){
-  const n=pendCount();
-  if(SYNC==='wait'&&n) return `<button type="button" class="sync wait" id="sync" title="${esc(SYNCMSG)}">${n===1?'1 Änderung':n+' Änderungen'} noch nicht gespeichert – wird nachgesendet. Jetzt erneut senden</button>`;
-  const t={busy:'Wird gespeichert…'}[SYNC]||'Alles gespeichert';
-  return `<span class="sync ${SYNC==='busy'?'busy':''}" id="sync" role="img" aria-label="${t}" title="${t}"></span>`;
-}
-function bindSync(){const b=document.getElementById('sync');if(b&&b.tagName==='BUTTON')b.onclick=()=>{setSync('busy');flush(true)}}
-function setSync(state,msg){SYNC=state||'';SYNCMSG=msg||'';const el=document.getElementById('sync');if(el){el.outerHTML=syncHtml();bindSync()}}
-
-async function sendRows(ups){ // gibt die dauerhaft abgelehnten Einträge zurück
-  const {error}=await sb.from('entries').upsert(ups.map(toRow),{onConflict:'user_id,id'});
-  if(!error) return [];
-  if(!isPermErr(error)) throw error;
-  if(ups.length===1) return [{e:ups[0],error}];
-  const bad=[]; for(const e of ups) bad.push(...await sendRows([e])); return bad; // einzeln, um den Schuldigen zu finden
-}
-async function sendPending(uid0){
-  const snap={...PEND.entries}, ups=[], dels=[], rejected=[];
-  for(const id in snap) snap[id].op==='del'?dels.push(id):ups.push(snap[id].e);
-  if(ups.length) rejected.push(...await sendRows(ups));
-  if(dels.length){const {error}=await sb.from('entries').delete().in('id',dels);if(error&&!isPermErr(error))throw error;if(error)rejected.push({error})}
-  // Nur entfernen, was inzwischen nicht erneut geändert wurde
-  for(const id in snap) if(PEND.entries[id]&&PEND.entries[id].v===snap[id].v) delete PEND.entries[id];
-  const sv=PEND.settings;
-  if(sv){const {error}=await sb.from('settings').upsert({user_id:uid0,data:DB.settings,updated_at:new Date().toISOString()});
-    if(error&&!isPermErr(error))throw error; if(error)rejected.push({error}); if(PEND.settings===sv)PEND.settings=0}
-  sentSeq++;
-  return rejected;
-}
-async function runFlush(manual){
-  const uid0=USER.id, key=pendKey(); let fail=null, rejected=[];
-  setSync('busy');
-  for(let round=0;round<MAX_ROUNDS&&pendCount()&&!fail;round++){ // weitere Runde, falls während des Sendens etwas dazukam
-    try{rejected.push(...await sendPending(uid0))}catch(e){fail=e}
-    if(!USER||USER.id!==uid0) return false; // inzwischen abgemeldet oder anderer Benutzer
-  }
-  pendSave(key);
-  if(rejected.length){toast(`${rejected.length===1?'1 Änderung wurde':rejected.length+' Änderungen wurden'} vom Server abgelehnt: ${rejected[0].error.message}`);setTimeout(()=>refresh(true),0)}
-  if(fail||pendCount()){setSync('wait',fail?(fail.message||String(fail)):''); if(manual) toast('Noch keine Verbindung – wird später erneut versucht'); return false}
-  setSync(); if(manual&&!rejected.length) toast('Alles gespeichert'); return true;
-}
-async function flush(manual){
-  if(!USER) return false;
-  while(flushP) await flushP; // laufenden Sendevorgang abwarten statt "nicht gespeichert" zu melden
-  if(!USER) return false;
-  if(!pendCount()){setSync();return true}
-  flushP=runFlush(manual);
-  try{return await flushP}finally{flushP=null}
-}
-window.addEventListener('online',()=>flush());
-setInterval(()=>{if(USER&&pendCount())flush()},RETRY_MS);
-
+function setSync(state){const el=document.getElementById('sync');if(el){el.className='sync '+(state||'');el.title={busy:'Wird gespeichert…',err:'Keine Verbindung – nicht gespeichert'}[state]||'Gespeichert'}}
 function cacheSave(){try{localStorage.setItem(cacheKey(),JSON.stringify(DB))}catch(e){}}
 function cacheLoad(){try{const s=localStorage.getItem(cacheKey());if(s){DB=JSON.parse(s);DB.settings={...DEFAULT_SETTINGS,...DB.settings};return true}}catch(e){}return false}
-function cacheClearAll(){try{Object.keys(localStorage).filter(k=>k.startsWith('zeit.cache.')).forEach(k=>localStorage.removeItem(k))}catch(e){}}
 function clearHol(){for(const k in _hol) delete _hol[k]}
 
-async function readServer(){
+async function fetchAll(){
+  setSync('busy');
   const st=await sb.from('settings').select('data').maybeSingle();
   if(st.error) throw st.error;
   const all=[]; const N=1000;
@@ -341,40 +258,33 @@ async function readServer(){
     if(r.error) throw r.error;
     all.push(...r.data); if(r.data.length<N) break;
   }
-  return {settings:{...DEFAULT_SETTINGS,...((st.data&&st.data.data)||{})},entries:all.map(fromRow)};
-}
-async function fetchAll(){
-  setSync('busy');
-  let srv=null;
-  // Wurde während des Lesens gesendet, ist der gelesene Stand veraltet -> noch einmal lesen
-  for(let i=0;i<3&&!srv;i++){const seq=sentSeq; srv=await readServer(); if(seq!==sentSeq||flushP){srv=null; if(flushP) await flushP.catch(()=>{})}}
-  if(!srv) srv=await readServer();
-  const localSettings=DB.settings;
-  DB=srv;
-  if(PEND.settings) DB.settings=localSettings;
-  pendApply();
-  clearHol(); cacheSave(); setSync(pendCount()?'wait':''); lastFetch=Date.now();
+  DB={settings:{...DEFAULT_SETTINGS,...((st.data&&st.data.data)||{})},entries:all.map(fromRow)};
+  clearHol(); cacheSave(); setSync(); lastFetch=Date.now();
 }
 async function refresh(silent){
-  if(pendCount()) await flush(); // erst Wartendes senden, dann den Serverstand holen
   try{await fetchAll(); render();}
-  catch(e){setSync(pendCount()?'wait':'',e.message||String(e)); if(!silent) toast('Laden fehlgeschlagen – angezeigt wird der zuletzt geladene Stand');}
+  catch(e){setSync('err'); if(!silent) toast('Laden fehlgeschlagen: '+(e.message||e));}
 }
 async function saveEntries(list){
-  const v=opVer(); list.forEach(e=>{PEND.entries[e.id]={op:'up',e,v}});
-  pendSave(); cacheSave();
-  return flush();
+  cacheSave(); setSync('busy');
+  const {error}=await sb.from('entries').upsert(list.map(toRow),{onConflict:'user_id,id'});
+  if(error){setSync('err');toast('Nicht gespeichert: '+error.message);await refresh(true);return false}
+  setSync(); return true;
 }
 async function deleteEntry(id){
   const gone=DB.entries.find(x=>x.id===id);
-  DB.entries=DB.entries.filter(x=>x.id!==id); if(gone)rbClearIfEmpty(gone.date);
-  PEND.entries[id]={op:'del',v:opVer()}; pendSave(); cacheSave(); render();
-  toast(await flush()?'Gelöscht':'Gelöscht – wird an den Server gesendet, sobald Internet da ist');
+  DB.entries=DB.entries.filter(x=>x.id!==id); if(gone)rbClearIfEmpty(gone.date); cacheSave(); render(); setSync('busy');
+  const {error}=await sb.from('entries').delete().eq('id',id);
+  if(error){setSync('err');toast('Löschen fehlgeschlagen: '+error.message);await refresh(true);return}
+  setSync(); toast('Gelöscht');
 }
 let setTimer=null;
 function saveSettings(){
-  clearHol(); cacheSave(); PEND.settings=opVer(); pendSave(); setSync('busy');
-  clearTimeout(setTimer); setTimer=setTimeout(()=>flush(),500);
+  clearHol(); cacheSave(); setSync('busy'); clearTimeout(setTimer);
+  setTimer=setTimeout(async()=>{
+    const {error}=await sb.from('settings').upsert({user_id:USER.id,data:DB.settings,updated_at:new Date().toISOString()});
+    if(error){setSync('err');toast('Einstellungen nicht gespeichert: '+error.message)} else setSync();
+  },500);
 }
 
 // ---------- Hilfen ----------
@@ -469,7 +379,7 @@ function shell(){
 }
 function go(v){view=v;monthOpen=null;render();window.scrollTo(0,0)}
 function topBar(title,extra='',backBtn=false){
-  return `<div class="top">${backBtn?`<button class="ibtn" id="back" aria-label="Zurück">${IC.back}</button>`:''}<h1>${title}</h1>${extra}${syncHtml()}</div>`;
+  return `<div class="top">${backBtn?`<button class="ibtn" id="back" aria-label="Zurück">${IC.back}</button>`:''}<h1>${title}</h1>${extra}<span class="sync" id="sync" title="Gespeichert"></span></div>`;
 }
 function render(){
   if(!M) return;
@@ -479,7 +389,6 @@ function render(){
   else if(view==='monate') monthOpen?vMonat():vMonate();
   else if(view==='auswertung') vAuswertung();
   else vEinst();
-  bindSync();
 }
 
 function entryHtml(e){
@@ -509,44 +418,14 @@ function vZeit(){
     <div class="weeksum num"><span>Woche: ${fmt(wsum)} von ${fmt(wsoll)} Std.</span><span class="${wsum-wsoll>=0?'pos':'neg'}">${fmtS(wsum-wsoll)}</span></div>
     <div class="sec"><span>${dlong(selDate)}${hol?' · '+esc(hol):''}${rbHead(selDate)}</span><span class="num">${list.length?fmt(sum)+' Std.':''}</span></div>
     ${hol&&!list.length&&st.workdays.includes(sd.getDay())?holidayHtml(selDate):''}
-    ${list.map(entryHtml).join('')||(hol?'':emptyDayHtml(sd))}
+    ${list.map(entryHtml).join('')||(hol?'':`<div class="empty">Noch kein Eintrag an diesem Tag.<br><br><button class="btn pri" id="add2">${IC.plus} Eintrag hinzufügen</button></div>`)}
    </div>`;
   M.querySelectorAll('.day').forEach(el=>el.onclick=()=>{selDate=el.dataset.d;render()});
   const shift=n=>{const d=parseIso(selDate);d.setDate(d.getDate()+n);selDate=iso(d);render()};
   M.querySelector('#prev').onclick=()=>shift(-7); M.querySelector('#next').onclick=()=>shift(7);
   M.querySelector('#today').onclick=()=>{selDate=iso(new Date());render()};
   M.querySelectorAll('#add,#add2').forEach(el=>el.onclick=()=>editEntry(null));
-  bindQuick();
   bindEntries();
-}
-
-// ---------- Schnell eintragen (leerer Tag) ----------
-// "Wie üblich" nimmt Beginn/Ende/Pause aus den Einstellungen, "Wie am …" kopiert die Arbeitszeiten
-// des letzten Tages mit Arbeit. Beides nur für heute und vergangene Tage. Rufbereitschaft wird nicht kopiert.
-function lastWorkDay(before){
-  let best='';DB.entries.forEach(e=>{if(e.type==='Arbeit'&&e.date<before&&e.date>best)best=e.date});
-  return best?DB.entries.filter(e=>e.type==='Arbeit'&&e.date===best).sort((x,y)=>x.start.localeCompare(y.start)):[];
-}
-const spanLbl=list=>list.map(e=>`${e.start}–${e.end}`).join(', ');
-function emptyDayHtml(sd){
-  const st=DB.settings, ds=iso(sd), canQuick=ds<=iso(new Date())&&st.workdays.includes(sd.getDay());
-  const usual={start:st.defaultStart,end:st.defaultEnd,pause:+st.defaultPause||0}, last=lastWorkDay(ds);
-  const quick=canQuick?`<button class="btn pri big" id="q_usual">Wie üblich eintragen<small class="num">${usual.start}–${usual.end}${usual.pause?' · Pause '+pauseLbl(usual.pause):''}</small></button>
-    ${last.length?`<button class="btn big" id="q_last">Wie am ${dlbl(last[0].date).slice(0,-4)}<small class="num">${spanLbl(last)}</small></button>`:''}`:'';
-  return `<div class="empty">Noch kein Eintrag an diesem Tag.<div class="quick">${quick}<button class="btn${canQuick?'':' pri'}" id="add2">${IC.plus} ${canQuick?'Andere Zeiten…':'Eintrag hinzufügen'}</button></div></div>`;
-}
-function quickSave(list){
-  const made=list.map(x=>({id:uid(),date:selDate,type:'Arbeit',start:x.start,end:x.end,pause:+x.pause||0,note:''}));
-  DB.entries.push(...made); render();
-  saveEntries(made).then(ok=>toast(ok?'Eingetragen: '+spanLbl(made):'Keine Verbindung – wird automatisch nachgesendet'));
-}
-function bindQuick(){
-  const u=M.querySelector('#q_usual'), l=M.querySelector('#q_last'), st=DB.settings;
-  if(u) u.onclick=()=>{const p=+st.defaultPause||0, work=toMin(st.defaultEnd)-toMin(st.defaultStart)-p;
-    // Würde die gesetzliche Pause fehlen, den normalen Dialog öffnen – dort erscheint die Pausen-Erinnerung.
-    if(work>=360&&p<(work>=540?45:30)) return editEntry(null);
-    quickSave([{start:st.defaultStart,end:st.defaultEnd,pause:p}])};
-  if(l) l.onclick=()=>quickSave(lastWorkDay(selDate));
 }
 
 // ---------- Ansicht: Monate ----------
@@ -706,10 +585,7 @@ function vEinst(){
   M.querySelector('#expcsv').onclick=()=>downloadCsv(DB.entries,'Zeiterfassung_alle.csv');
   M.querySelector('#imp').onclick=()=>document.getElementById('fileIn').click();
   M.querySelector('#pw').onclick=()=>passwordDialog(false);
-  M.querySelector('#logout').onclick=async()=>{if(pendCount())await flush(true); // vorher noch einmal senden
-    const n=pendCount();
-    if(!confirm(n?`Achtung: ${n===1?'1 Änderung ist':n+' Änderungen sind'} noch nicht gespeichert und gehen beim Abmelden verloren.\n\nTrotzdem abmelden?`:'Abmelden?'))return;
-    PEND={entries:{},settings:0};pendSave();cacheClearAll();await sb.auth.signOut();};
+  M.querySelector('#logout').onclick=async()=>{if(!confirm('Abmelden?'))return;try{localStorage.removeItem(cacheKey())}catch(e){}await sb.auth.signOut();};
 }
 function applyTheme(){let t='';try{t=localStorage.getItem('zeit.theme')||''}catch(e){} if(t)document.documentElement.dataset.theme=t; else delete document.documentElement.dataset.theme;}
 applyTheme();
@@ -719,22 +595,20 @@ document.getElementById('fileIn').onchange=async ev=>{
   try{
     const d=JSON.parse(await f.text()); if(!Array.isArray(d.entries))throw new Error('Keine gültige Sicherung');
     if(!confirm(`Backup mit ${d.entries.length} Einträgen einspielen?\n\nAlle ${DB.entries.length} Einträge in der Datenbank werden dabei ersetzt.`))return;
-    if(pendCount()&&!(await flush())) throw new Error('Keine Verbindung – bitte später erneut versuchen');
     toast('Wird eingespielt…'); setSync('busy');
     const del=await sb.from('entries').delete().eq('user_id',USER.id); if(del.error) throw del.error;
     const rows=d.entries.map(e=>toRow({...e,id:e.id||uid()}));
     for(let i=0;i<rows.length;i+=500){const r=await sb.from('entries').insert(rows.slice(i,i+500)); if(r.error) throw r.error; toast(`Eingespielt: ${Math.min(i+500,rows.length)} / ${rows.length}`)}
     DB.settings={...DEFAULT_SETTINGS,...(d.settings||{})};
     const r=await sb.from('settings').upsert({user_id:USER.id,data:DB.settings,updated_at:new Date().toISOString()}); if(r.error) throw r.error;
-    PEND={entries:{},settings:0};pendSave(); // das Backup ersetzt alles, ältere wartende Änderungen sind damit überholt
     await fetchAll(); render(); toast(`Fertig: ${DB.entries.length} Einträge eingespielt`);
-  }catch(e){setSync(); alert('Fehler beim Einspielen: '+(e.message||e)); refresh(true);}
+  }catch(e){setSync('err'); alert('Fehler beim Einspielen: '+(e.message||e)); refresh(true);}
 };
 function download(text,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
 function downloadCsv(list,name){
   const rows=[['Datum','Wochentag','Art','Beginn','Ende','Pause (Min.)','Stunden','Grund','Beschreibung']];
   list.slice().sort((a,b)=>a.date.localeCompare(b.date)||(a.start||'').localeCompare(b.start||'')).forEach(e=>rows.push([e.date.split('-').reverse().join('.'),WD[parseIso(e.date).getDay()],e.type,e.start||'',e.end||'',e.pause||'',fmt(hours(e)),e.reason||'',e.note||'']));
-  download('﻿'+rows.map(r=>r.map(c=>{let v=String(c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return `"${v.replace(/"/g,'""')}"`}).join(';')).join('\r\n'),name,'text/csv');
+  download('﻿'+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(';')).join('\r\n'),name,'text/csv');
 }
 
 // ---------- Eintrag bearbeiten ----------
@@ -817,7 +691,7 @@ function editEntry(e){
       if(origDate!==base.date&&!DB.entries.some(x=>x.date===origDate)) delete o[origDate];
       if(JSON.stringify(o)!==JSON.stringify(s.rb||{})){s.rb=o;saveSettings()}}
     D.close(); selDate=base.date; render();
-    saveEntries(changed).then(ok=>toast(ok?(changed.length>1?changed.length+' Einträge gespeichert':'Gespeichert'):'Keine Verbindung – wird automatisch nachgesendet, sobald Internet da ist'));
+    saveEntries(changed).then(ok=>ok&&toast(changed.length>1?changed.length+' Einträge gespeichert':'Gespeichert'));
   };
   D.addEventListener('close',micStop,{once:true});
   draw(); D.showModal();
@@ -860,7 +734,7 @@ function vLogin(msg=''){
 }
 let booted=null;
 async function boot(user){
-  if(booted===user.id) return; booted=user.id; USER=user; pendLoad();
+  if(booted===user.id) return; booted=user.id; USER=user;
   const had=cacheLoad(); shell(); render();
   if(!had) M.innerHTML=topBar('Zeiterfassung')+'<div class="wrap"><div class="empty">Daten werden geladen…</div></div>';
   await refresh(false);
@@ -869,7 +743,7 @@ sb.auth.onAuthStateChange((event,session)=>{
   setTimeout(()=>{ // außerhalb des Auth-Callbacks weiterarbeiten
     if(event==='PASSWORD_RECOVERY'&&session){boot(session.user).then(()=>passwordDialog(true));return}
     if(session&&session.user) boot(session.user);
-    else if(event!=='TOKEN_REFRESHED'){cacheClearAll();booted=null;USER=null;PEND={entries:{},settings:0};M=null;DB={settings:{...DEFAULT_SETTINGS},entries:[]};vLogin();}
+    else if(event!=='TOKEN_REFRESHED'){booted=null;USER=null;M=null;DB={settings:{...DEFAULT_SETTINGS},entries:[]};vLogin();}
   },0);
 });
 // Beim Zurückkehren zur App (z. B. am Handy) Änderungen vom anderen Gerät holen

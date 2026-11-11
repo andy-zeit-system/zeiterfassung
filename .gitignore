@@ -7,8 +7,3 @@ daten/
 backup*/
 .env
 .env.*
-*.xlsx
-*.pdf
-*.bak
-.DS_Store
-.impeccable/
