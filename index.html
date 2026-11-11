@@ -135,6 +135,7 @@ main{flex:1;min-width:0;padding-bottom:40px}
 .btn.big small{font-size:13px;font-weight:500;opacity:.85}
 .qrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px}
 .qlbl{flex-basis:100%;font-size:13px;font-weight:600;color:var(--mut)}
+.qnote{flex-basis:100%;font-size:13px;color:var(--vac-txt)}
 .qchip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:8px 14px;border-radius:10px;border:1px solid var(--acc);background:var(--acc-soft);color:var(--txt);font-weight:700;font-size:15px}
 .qchip span{font-weight:500}
 .qchip:hover{background:var(--surface2)}
@@ -820,14 +821,17 @@ function editEntry(e){
     rec.onerror=ev=>{micOn=false;if(ev.error!=='aborted')toast(ev.error==='not-allowed'||ev.error==='service-not-allowed'?'Mikrofon ist für diese Seite nicht erlaubt':ev.error==='no-speech'?'Nichts gehört – Aufnahme beendet':ev.error==='network'?'Spracherkennung braucht Internet':'Spracherkennung: '+ev.error)};
     rec.onend=()=>{rec=null;if(micOn&&D.open){try{micStart()}catch(x){micOn=false}}micShow()};
     rec.start()};
-  // Schnell eintragen im Dialog: nur bei neuem Arbeits-Eintrag an einem leeren Tag bis heute.
+  // Schnell eintragen im Dialog: bei jedem neuen Arbeits-Eintrag (auch für spätere Tage).
+  // Hat der Tag schon Arbeitszeiten, steht ein Hinweis dabei, damit nichts doppelt eingetragen wird.
   // Ein Zeitraum -> Felder füllen und normal speichern (mit Pausen-Erinnerung und Rufbereitschaft).
   // Mehrere Zeiträume "wie am …" -> alle direkt für das gewählte Datum speichern.
   let qLast=[];
   const quickHtml=()=>{
-    if(!isNew||e.type!=='Arbeit'||e.date>iso(new Date())||DB.entries.some(x=>x.date===e.date)) return '';
+    if(!isNew||e.type!=='Arbeit') return '';
     qLast=lastWorkDay(e.date);
+    const have=DB.entries.filter(x=>x.date===e.date&&x.type==='Arbeit').reduce((a,x)=>a+hours(x),0);
     return `<div class="qrow" role="group" aria-label="Mit einem Tipp speichern"><span class="qlbl">Mit einem Tipp speichern</span>
+      ${have?`<span class="qnote">An diesem Tag sind schon <b class="num">${fmt(have)} Std.</b> eingetragen – der Knopf fügt weitere Zeiten hinzu.</span>`:''}
       <button type="button" class="qchip" id="f_qu">Wie üblich <span class="num">${s.defaultStart}–${s.defaultEnd}</span></button>
       ${qLast.length?`<button type="button" class="qchip" id="f_ql">Wie am ${dlbl(qLast[0].date).slice(0,-4)} <span class="num">${spanLbl(qLast)}</span></button>`:''}</div>`;
   };
