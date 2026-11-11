@@ -214,6 +214,9 @@ table{width:100%;border-collapse:collapse;font-size:14px}
 .ltab .rb-m{color:var(--mut)}
 th{font-size:11px;color:var(--mut);text-align:left;font-weight:600;padding:6px 4px;text-transform:uppercase;letter-spacing:.04em}
 td{padding:8px 4px;border-top:1px solid var(--line)}
+.show-m{display:none}
+.rbt td:last-child{white-space:nowrap}
+.rbcard{overflow-x:auto}
 td.r,th.r{text-align:right}
 
 /* Tabs */
@@ -299,7 +302,10 @@ label{display:block;font-size:12.5px;font-weight:600;color:var(--mut);margin-bot
   .ltab tr.lweek,.ltab tfoot tr{grid-template-columns:1fr auto}
   .ltab tr.lweek td,.ltab tfoot td{padding:8px 12px}
   .ltab tr.lempty{display:block}
-}
+  .show-m{display:inline}
+  .rbcard{padding:12px 10px}
+  .rbt th{letter-spacing:0;padding:6px 3px}
+  .rbt td{padding:8px 3px}
 }
 @media (max-width:400px){.g3{grid-template-columns:1fr 1fr}.g3>div:last-child{grid-column:span 2}.kpi .v{font-size:18px}.big{font-size:26px}}
 @media print{
@@ -818,7 +824,7 @@ function vAuswertung(){
     const tr=(name,c,b)=>`<tr><td>${b?'<b>':''}${name}${b?'</b>':''}</td>${[c.ueb,c.voll,c.sf,c.abg].map(v=>`<td class="r">${v||''}</td>`).join('')}<td class="r">${b?'<b>':''}${eur(c.eur)}${b?'</b>':''}</td></tr>`;
     body=ys.map(y=>{const ms=[...Array(12)].map((_,m)=>({m,l:rbMonth(+y,m)})).filter(x=>x.l.length).reverse();const all=ms.flatMap(x=>x.l);
       return `<div class="sec"><span>${y}</span><span class="num">${all.length} ${all.length===1?'Tag':'Tage'} · ${eur(cnt(all).eur)}</span></div>
-      <div class="card">${ms.length?`<table class="num"><tr><th>Monat</th><th class="r">Übern.</th><th class="r">Rufb.</th><th class="r">So/Feiert.</th><th class="r">Abgeg.</th><th class="r">Betrag</th></tr>
+      <div class="card rbcard">${ms.length?`<table class="num rbt"><tr><th>Monat</th><th class="r"><span class="hide-m">Übern.</span><span class="show-m">Üb.</span></th><th class="r"><span class="hide-m">Rufb.</span><span class="show-m">Rb.</span></th><th class="r"><span class="hide-m">So/Feiert.</span><span class="show-m">So/F.</span></th><th class="r"><span class="hide-m">Abgeg.</span><span class="show-m">Ab.</span></th><th class="r">Betrag</th></tr>
       ${tr('Summe '+y,cnt(all),true)}${ms.map(x=>tr(MON[x.m],cnt(x.l))).join('')}</table>`:'<p class="muted" style="margin:0">Keine Rufbereitschaft eingetragen.</p>'}</div>`}).join('')+
       `<p class="muted" style="font-size:12.5px;margin:10px 4px">Sätze: übernommen ${eur(rbPrice('ueb',''))}, Rufbereitschaft ${eur(+(s.rbVoll??5))}, an Sonn- und Feiertagen ${eur(+(s.rbSoFei??10))}, abgegeben ${eur(rbPrice('abg',''))}. Änderbar in den Einstellungen.</p>`;
   } else {
