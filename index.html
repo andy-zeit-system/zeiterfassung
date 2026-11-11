@@ -17,18 +17,18 @@
 :root{
   --bg:#f3f5f7;--surface:#fff;--surface2:#eef1f4;--line:#e1e6ea;--txt:#16202a;--mut:#687583;
   --acc:#0f766e;--acc-ink:#fff;--acc-soft:#e3f3f1;
-  --work:#0f766e;--vac:#d97706;--sick:#dc2626;--hol:#7c3aed;--pos:#15803d;--neg:#c2410c;
+  --work:#0f766e;--vac:#d97706;--vac-txt:#b45309;--sick:#dc2626;--hol:#7c3aed;--pos:#15803d;--neg:#c2410c;
   --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);--r:14px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0e1215;--surface:#161b1f;--surface2:#1d2429;--line:#283137;--txt:#e7ecef;--mut:#94a1ab;
   --acc:#2dd4bf;--acc-ink:#062b27;--acc-soft:#123430;
-  --work:#2dd4bf;--vac:#fbbf24;--sick:#f87171;--on-sick:#0e1215;--hol:#a78bfa;--pos:#4ade80;--neg:#fb923c;
+  --work:#2dd4bf;--vac:#fbbf24;--sick:#f87171;--on-sick:#0e1215;--vac-txt:#fbbf24;--hol:#a78bfa;--pos:#4ade80;--neg:#fb923c;
   --shadow:none;}}
 :root[data-theme="dark"]{
   --bg:#0e1215;--surface:#161b1f;--surface2:#1d2429;--line:#283137;--txt:#e7ecef;--mut:#94a1ab;
   --acc:#2dd4bf;--acc-ink:#062b27;--acc-soft:#123430;
-  --work:#2dd4bf;--vac:#fbbf24;--sick:#f87171;--on-sick:#0e1215;--hol:#a78bfa;--pos:#4ade80;--neg:#fb923c;--shadow:none;}
+  --work:#2dd4bf;--vac:#fbbf24;--sick:#f87171;--on-sick:#0e1215;--vac-txt:#fbbf24;--hol:#a78bfa;--pos:#4ade80;--neg:#fb923c;--shadow:none;}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
@@ -91,6 +91,21 @@ main{flex:1;min-width:0;padding-bottom:40px}
 
 /* Woche */
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px}
+/* Heute-Leiste: Status von heute + Monat bis heute */
+.today{margin:0 0 18px;padding:14px 16px 12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.today p{margin:0}
+.t-line{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:16px;min-height:36px}
+.t-line b{font-weight:700}
+.t-line .btn{min-height:44px}
+.mbar{position:relative;height:10px;margin:12px 0 8px;border-radius:999px;background:var(--surface2);overflow:visible}
+.mbar .fill{position:absolute;inset:0 auto 0 0;border-radius:999px;background:var(--work)}
+.mbar .mark{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;border-radius:1px;background:var(--txt)}
+.m-line{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;font-size:13px;color:var(--mut)}
+.m-line b{color:var(--txt);font-weight:600}
+.m-state{font-weight:700}
+.m-state.ok,.m-state.ahead{color:var(--pos)}.behind{color:var(--vac-txt)}
+.m-sub{margin-top:2px!important;font-size:12px;color:var(--mut)}
+.m-sub i{display:inline-block;width:2px;height:10px;margin:0 6px -1px 0;background:var(--txt);border-radius:1px}
 .day{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 0 7px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
 .day .wd{font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase}
 .day .dn{font-size:18px;font-weight:700}
@@ -489,6 +504,39 @@ function entryHtml(e){
 const holidayHtml=d=>`<div class="entry Feiertag"><span class="stripe"></span><span class="body"><div class="t">Feiertag</div><div class="s">${esc(isHoliday(d))}</div></span><span class="h num">${DB.settings.holidayPaid?fmt(DB.settings.dailySoll)+' h':'frei'}</span></div>`;
 function bindEntries(){M.querySelectorAll('button.entry').forEach(el=>el.onclick=()=>editEntry(DB.entries.find(e=>e.id===el.dataset.id)));}
 
+// ---------- Heute-Leiste ----------
+// Zeigt nur an, rechnet nichts Neues: Ist und Soll kommen aus monthStats.
+// "Bis heute fällig" = Monats-Soll anteilig nach Soll-Tagen (gleiche Tage wie in monthStats) bis einschließlich heute.
+// Ist bis heute = Einträge bis heute (+ Feiertagslohn bis heute, falls eingestellt). Spätere, z. B. geplanter Urlaub, zählen noch nicht.
+const PLAN_TOLERANCE_H=0.5;
+function monthToDate(now=new Date()){
+  const y=now.getFullYear(), m=now.getMonth(), today=iso(now), st=DB.settings, ms=monthStats(y,m);
+  let all=0, past=0;
+  for(let d=new Date(y,m,1);d.getMonth()===m;d.setDate(d.getDate()+1)){const s=iso(d);
+    if((st.startDate&&s<st.startDate)||!st.workdays.includes(d.getDay())) continue; all++; if(s<=today) past++}
+  const due=all?ms.soll*past/all:0;
+  const ist=ms.list.filter(e=>e.date<=today).reduce((a,e)=>a+hours(e),0)+(st.holidayPaid?ms.feiertage.filter(d=>d<=today).length*st.dailySoll:0);
+  return {y,m,soll:ms.soll,due,ist,diff:ist-due};
+}
+function todayHtml(){
+  const now=new Date(), t=iso(now), st=DB.settings;
+  const list=DB.entries.filter(e=>e.date===t), h=list.reduce((a,e)=>a+hours(e),0);
+  const free=!st.workdays.includes(now.getDay())||!!isHoliday(t);
+  const status=list.length?`<b class="num">${fmt(h)} Std.</b> eingetragen`:free?`frei${isHoliday(t)?' · '+esc(isHoliday(t)):''}`:'noch nichts eingetragen';
+  const jump=selDate!==t&&!list.length&&!free?`<button class="btn small" id="t_go">Heute eintragen</button>`:'';
+  const k=monthToDate(now);
+  if(!(k.soll>0)) return `<section class="today" aria-label="Heute"><p class="t-line"><span>Heute: ${status}</span>${jump}</p></section>`;
+  const max=Math.max(k.soll,k.ist), pct=v=>Math.min(100,v/max*100).toFixed(1);
+  const state=Math.abs(k.diff)<PLAN_TOLERANCE_H?['ok','im Plan']:k.diff>0?['ahead',`${fmt(k.diff,1)} Std. voraus`]:['behind',`${fmt(-k.diff,1)} Std. offen`];
+  const aria=`${MON[k.m]}: ${fmt(k.ist,1)} von ${fmt(k.soll,1)} Stunden, bis heute fällig ${fmt(k.due,1)}, ${state[1]}`;
+  return `<section class="today" aria-label="Heute">
+    <p class="t-line"><span>Heute: ${status}</span>${jump}</p>
+    <div class="mbar" role="img" aria-label="${aria}"><span class="fill" style="width:${pct(k.ist)}%"></span><span class="mark" style="left:${pct(k.due)}%"></span></div>
+    <p class="m-line"><span>${MON[k.m]}: <b class="num">${fmt(k.ist,1)}</b> von <span class="num">${fmt(k.soll,1)}</span> Std.</span><span class="m-state ${state[0]==='behind'?'behind':state[0]}">${state[1]}</span></p>
+    <p class="m-sub"><i aria-hidden="true"></i>bis heute fällig: <span class="num">${fmt(k.due,1)}</span> Std.</p>
+  </section>`;
+}
+
 // ---------- Ansicht: Zeiten ----------
 function vZeit(){
   const sd=parseIso(selDate); const mon=new Date(sd); mon.setDate(sd.getDate()-((sd.getDay()+6)%7));
@@ -499,14 +547,17 @@ function vZeit(){
   const list=(byDay[selDate]||[]).sort((x,y)=>(x.start||'').localeCompare(y.start||''));
   const sum=list.reduce((s,e)=>s+hours(e),0);
   const wsum=Object.values(byDay).flat().reduce((s,e)=>s+hours(e),0);
-  const st=DB.settings; let wsoll=0; days.forEach(d=>{if(st.workdays.includes(d.getDay())&&(!st.startDate||iso(d)>=st.startDate))wsoll+=st.dailySoll});
+  const st=DB.settings; let wsoll=0; const partial=a<=today&&today<b; // laufende Woche: Soll nur bis heute
+  days.forEach(d=>{const s=iso(d);if(st.workdays.includes(d.getDay())&&(!st.startDate||s>=st.startDate)&&(!partial||s<=today))wsoll+=st.dailySoll});
+  const wist=partial?Object.entries(byDay).filter(([d])=>d<=today).flatMap(([,l])=>l).reduce((s,e)=>s+hours(e),0):wsum;
   const hol=isHoliday(selDate);
   M.innerHTML=topBar(`${MON[sd.getMonth()]} ${sd.getFullYear()} <small>KW ${kw}</small>`,
     `<button class="ibtn" id="prev" aria-label="Vorige Woche">${IC.left}</button><button class="btn small" id="today">Heute</button><button class="ibtn" id="next" aria-label="Nächste Woche">${IC.right}</button><button class="btn pri hide-m" id="add" style="margin-left:6px">${IC.plus} Eintrag</button>`)+
    `<div class="wrap">
+    ${todayHtml()}
     <div class="week">${days.map(d=>{const s=iso(d);const h=(byDay[s]||[]).reduce((x,e)=>x+hours(e),0);
       return `<button class="day ${s===selDate?'sel':''} ${s===today?'today':''} ${d.getDay()===0?'sun':''} ${isHoliday(s)?'hol':''}" data-d="${s}"><span class="wd">${WD[d.getDay()]}</span><span class="dn">${d.getDate()}</span><span class="dh num">${h?fmt(h,1):''}</span></button>`}).join('')}</div>
-    <div class="weeksum num"><span>Woche: ${fmt(wsum)} von ${fmt(wsoll)} Std.</span><span class="${wsum-wsoll>=0?'pos':'neg'}">${fmtS(wsum-wsoll)}</span></div>
+    <div class="weeksum num"><span>${partial?`Woche bis heute: ${fmt(wist)} von ${fmt(wsoll)} Std.`:`Woche: ${fmt(wsum)} von ${fmt(wsoll)} Std.`}</span><span class="${wist-wsoll>=0?'pos':'behind'}">${fmtS(wist-wsoll)}</span></div>
     <div class="sec"><span>${dlong(selDate)}${hol?' · '+esc(hol):''}${rbHead(selDate)}</span><span class="num">${list.length?fmt(sum)+' Std.':''}</span></div>
     ${hol&&!list.length&&st.workdays.includes(sd.getDay())?holidayHtml(selDate):''}
     ${list.map(entryHtml).join('')||(hol?'':emptyDayHtml(sd))}
@@ -514,7 +565,7 @@ function vZeit(){
   M.querySelectorAll('.day').forEach(el=>el.onclick=()=>{selDate=el.dataset.d;render()});
   const shift=n=>{const d=parseIso(selDate);d.setDate(d.getDate()+n);selDate=iso(d);render()};
   M.querySelector('#prev').onclick=()=>shift(-7); M.querySelector('#next').onclick=()=>shift(7);
-  M.querySelector('#today').onclick=()=>{selDate=iso(new Date());render()};
+  M.querySelectorAll('#today,#t_go').forEach(el=>el.onclick=()=>{selDate=iso(new Date());render()});
   M.querySelectorAll('#add,#add2').forEach(el=>el.onclick=()=>editEntry(null));
   bindQuick();
   bindEntries();
