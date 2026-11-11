@@ -31,6 +31,8 @@ html,body{margin:0;min-height:100%;background:var(--bg);color:var(--txt);font:15
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 input,select,textarea{font:inherit;color:var(--txt);background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-height:44px}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:-1px;border-color:transparent}
+input.plain{border-color:transparent;background:transparent;padding:2px 0;min-height:28px;text-align:right;-moz-appearance:textfield;appearance:textfield;cursor:text}
+input.plain::-webkit-outer-spin-button,input.plain::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .warn{border:1px solid var(--neg);border-radius:10px;padding:10px 12px;margin:10px 0 16px;font-size:14px;line-height:1.5}
 .warnbtn{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .chk{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:500;color:var(--txt);margin:0;padding:7px 0;cursor:pointer}
@@ -490,7 +492,7 @@ function vAuswertung(){
         return `<div class="sec"><span>${y}</span><span class="num">${y===thisY?'Stand heute':'Stand Jahresende'}: ${fmtS(i.end)} Std.</span></div>
         <div class="card"><table class="num"><tr><th>Monat</th><th class="r">Ausbezahlt</th><th class="r">Differenz</th><th class="r">Saldo</th></tr>
         <tr><td><b>${y===thisY?'Stand heute':'Stand Ende '+y}</b></td><td class="r"><b>${i.pay?fmt(i.pay):''}</b></td><td class="r ${ch>=0?'pos':'neg'}"><b>${fmtS(ch)}</b></td><td class="r"><b>${fmt(i.end)}</b></td></tr>
-        ${rs.map(r=>{const d=r.st.diff-r.pay;return `<tr><td>${MON[r.k.slice(5)-1]}</td><td class="r"><input type="number" step="0.01" min="0" data-pay="${r.k}" value="${r.pay||''}" placeholder="0" aria-label="Ausbezahlte Überstunden ${MON[r.k.slice(5)-1]} ${y}" style="width:64px;min-height:28px;padding:2px 6px;text-align:right"></td><td class="r ${d>=0?'pos':'neg'}">${fmtS(d)}</td><td class="r">${fmt(r.bal)}</td></tr>`}).join('')}
+        ${rs.map(r=>{const d=r.st.diff-r.pay;return `<tr><td>${MON[r.k.slice(5)-1]}</td><td class="r"><input type="number" step="0.01" min="0" data-pay="${r.k}" value="${r.pay||''}" aria-label="Ausbezahlte Überstunden ${MON[r.k.slice(5)-1]} ${y}" class="plain" style="width:64px"></td><td class="r ${d>=0?'pos':'neg'}">${fmtS(d)}</td><td class="r">${fmt(r.bal)}</td></tr>`}).join('')}
         <tr><td>Übertrag aus ${y-1}</td><td></td><td class="r muted">${i.set?'eingetragen':'errechnet'}</td><td class="r"><input type="number" step="0.01" data-ocarry="${y}" value="${i.set?oc[y]:''}" placeholder="${Math.round(i.calc*100)/100}" style="width:88px;min-height:28px;padding:2px 6px;text-align:right"></td></tr></table>
         <p class="muted" style="font-size:12.5px;margin:10px 0 0">Differenz = Ist − Soll − ausbezahlte Überstunden. Die Auszahlung je Monat eintragen, sobald sie auf der Lohnabrechnung steht.<br>Übertrag leer lassen: Das Jahr beginnt mit dem errechneten Stand der Vorjahre.</p></div>`}).join('');
     else body=years.map(y=>{const rs=rows.filter(r=>r.k.startsWith(y)).reverse();const ist=rs.reduce((a,r)=>a+r.st.ist,0),soll=rs.reduce((a,r)=>a+r.st.soll,0),br=rs.reduce((a,r)=>a+r.st.brutto,0);const max=Math.max(...rs.map(r=>Math.max(r.st.ist,r.st.soll)),1);
