@@ -31,6 +31,8 @@ html,body{margin:0;min-height:100%;background:var(--bg);color:var(--txt);font:15
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 input,select,textarea{font:inherit;color:var(--txt);background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-height:44px}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:-1px;border-color:transparent}
+.warn{border:1px solid var(--neg);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:14px;line-height:1.5}
+.warnbtn{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .chk{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:500;color:var(--txt);margin:0;padding:7px 0;cursor:pointer}
 .chk input{width:20px;min-height:20px;height:20px;padding:0;flex:none;accent-color:var(--acc)}
 .chk .muted{margin-left:auto;font-size:13px}
@@ -607,7 +609,13 @@ function downloadCsv(list,name){
 function editEntry(e){
   const s=DB.settings; const isNew=!e;
   e=e?{...e}:{id:uid(),date:selDate,type:'Arbeit',start:s.defaultStart,end:s.defaultEnd,pause:s.defaultPause,note:''};
-  const origDate=e.date; let rb=rbOf(e.date);
+  const origDate=e.date; let rb=rbOf(e.date); let ackPause=false;
+  // Gesetzliche Pause (ArbZG § 4): mehr als 6 Std. Arbeit am Tag = 30 Min., mehr als 9 Std. = 45 Min.
+  // Gezählt wird der ganze Tag: Pausen aller Arbeitseinträge plus Lücken zwischen ihnen. Nur Erinnerung, kein Zwang.
+  const pauseCheck=b=>{const day=DB.entries.filter(x=>x.type==='Arbeit'&&x.date===b.date&&x.id!==b.id).concat([b]).map(x=>{let a=toMin(x.start),z=toMin(x.end);if(z<a)z+=1440;return{a,z,p:+x.pause||0}}).sort((p,q)=>p.a-q.a);
+    let gross=0,own=0,gaps=0;day.forEach((x,i)=>{gross+=x.z-x.a;own+=x.p;if(i)gaps+=Math.max(0,x.a-day[i-1].z)});
+    const work=gross-own,need=work>540?45:work>360?30:0,pause=own+gaps;
+    return need&&pause<need?{work,need,pause,miss:need-pause,n:day.length}:null};
   const F=document.getElementById('dlgForm'), D=document.getElementById('dlg');
   const draw=()=>{
     const work=e.type==='Arbeit';
@@ -621,6 +629,7 @@ function editEntry(e){
      ${RB_KINDS.map(([k,l])=>`<label class="chk"><input type="checkbox" data-rb="${k}" ${rb===k?'checked':''}><span>${l}</span><span class="muted num" data-rbp="${k}"></span></label>`).join('')}</div>`:''}
     <div><label for="f_note">Beschreibung</label><textarea id="f_note" rows="3" maxlength="1000" style="resize:vertical" placeholder="Optional">${esc(e.note)}</textarea></div>
     <div class="calc num" id="f_sum"></div>
+    <div id="f_warn" role="alert"></div>
     <div class="actions">${isNew?'<span></span>':'<button type="button" class="btn danger" id="f_del">Löschen</button>'}
      <span><button type="button" class="btn" id="f_cancel">Abbrechen</button><button class="btn pri" id="f_ok">Speichern</button></span></div>`;
     F.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{read();e.type=b.dataset.t;draw()});
@@ -642,6 +651,13 @@ function editEntry(e){
   F.onsubmit=ev=>{ev.preventDefault();read();
     const base={...e}; delete base._to;
     if(base.type==='Arbeit'&&(!base.start||!base.end)) return toast('Bitte Beginn und Ende angeben');
+    const pw=base.type==='Arbeit'&&!ackPause?pauseCheck(base):null;
+    if(pw){const W=F.querySelector('#f_warn');
+      W.innerHTML=`<div class="warn"><b>Gesetzliche Pause beachten</b><br>An diesem Tag sind ${hmin(pw.work/60)} Stunden Arbeit eingetragen. Bei mehr als ${pw.need===45?9:6} Stunden sind ${pw.need} Minuten Pause vorgeschrieben, eingetragen sind ${pw.pause} Minuten${pw.n>1?' (Pausen und Lücken zwischen den Einträgen des Tages mitgezählt)':''}.
+        <div class="warnbtn"><button type="button" class="btn small pri" id="w_fill">${pw.miss} Min. Pause eintragen</button><button type="button" class="btn small" id="w_skip">Ohne Pause speichern</button></div></div>`;
+      W.querySelector('#w_fill').onclick=()=>{const p=F.querySelector('#f_pause');p.value=(parseInt(p.value)||0)+pw.miss;W.innerHTML='';p.dispatchEvent(new Event('input'));p.focus()};
+      W.querySelector('#w_skip').onclick=()=>{ackPause=true;F.requestSubmit()};
+      W.scrollIntoView({block:'nearest'}); return}
     if(base.type!=='Arbeit'){delete base.start;delete base.end;delete base.pause;if(isNaN(base.hours))base.hours=s.dailySoll}
     let changed=[];
     if(isNew&&e.type!=='Arbeit'&&e._to&&e._to>e.date){
