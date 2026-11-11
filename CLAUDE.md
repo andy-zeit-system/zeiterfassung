@@ -10,7 +10,8 @@ Zeiterfassungs-App für PC und Handy (Ersatz für eine frühere Fremd-App). Spra
 - `manifest.webmanifest`, `icon*.png`, `icon.svg` – Installation als App auf dem Handy.
 
 ## Fachliche Regeln (nicht ohne Rückfrage ändern)
-- Soll = `dailySoll` (4,98 Std.) je Arbeitstag (Mo–Sa), gezählt ab `startDate`.
+- Soll: Ist `monthlySoll` gesetzt (Vorgabe vom 11.11.2026: 130 Std. fest pro Monat, wie Excel und Firmennachweis), gilt dieser Wert für jeden Monat ab `startDate`. Sonst Soll = `dailySoll` je Arbeitstag (Mo–Sa), gezählt ab `startDate`.
+- Überstunden-Auswertung: je Jahr ein Block; `overtimeCarry[Jahr]` setzt den Übertrag aus dem Vorjahr (2026: 290,55 aus Excel), `overtimePayout['JJJJ-MM']` sind ausbezahlte Überstunden und mindern den Saldo.
 - Urlaub/Krankheit zählen mit ihren Stunden (Standard = dailySoll) als Ist.
 - Gesetzliche Feiertage Niedersachsen (Osterformel) werden erkannt. Feiertage ohne Eintrag sind **freie Tage ohne Bezahlung** (Vorgabe vom 11.11.2026, Einstellung `holidayPaid` leer). Nur wenn `holidayPaid` gesetzt ist, werden sie an Arbeitstagen ohne Eintrag als „Feiertagslohn“ gutgeschrieben (alte ACHIM-Regel).
 - Arbeitsstunden an Sonntagen und Feiertagen werden pro Monat für den Zuschlag zusammengezählt (`sfStd`, `sfTage` in `monthStats`).

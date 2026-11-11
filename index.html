@@ -222,7 +222,7 @@ const IC={
 };
 
 // ---------- Daten ----------
-const DEFAULT_SETTINGS={name:'',company:'',rates:[{from:'2000-01-01',rate:0}],dailySoll:4.98,workdays:[1,2,3,4,5,6],defaultStart:'08:00',defaultEnd:'12:00',defaultPause:0,holidayState:'NI',holidayPaid:'',holidays:[],vacationPerYear:0,vacationCarry:{},overtimeStart:0,overtimeCarry:{},overtimePayout:{},startDate:''};
+const DEFAULT_SETTINGS={name:'',company:'',rates:[{from:'2000-01-01',rate:0}],dailySoll:4.98,monthlySoll:0,workdays:[1,2,3,4,5,6],defaultStart:'08:00',defaultEnd:'12:00',defaultPause:0,holidayState:'NI',holidayPaid:'',holidays:[],vacationPerYear:0,vacationCarry:{},overtimeStart:0,overtimeCarry:{},overtimePayout:{},startDate:''};
 let DB={settings:{...DEFAULT_SETTINGS},entries:[]}, USER=null, lastFetch=0;
 const cacheKey=()=>'zeit.cache.'+(USER&&USER.id);
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));
@@ -325,6 +325,8 @@ function monthStats(y,m){
     // Feiertag auf Arbeitstag ohne Eintrag: freier Tag. Nur wenn in den Einstellungen so gewählt, wird er bezahlt gutgeschrieben (Feiertagslohn).
     if(isHoliday(s) && !list.some(e=>e.date===s)){ if(DB.settings.holidayPaid) add('Feiertagslohn',ds,s); feiertage.push(s); }
   }
+  // Festes Monats-Soll (z. B. 130 Std. laut Vertrag) ersetzt das nach Arbeitstagen gezählte Soll; Monate vor dem Startdatum haben kein Soll.
+  if(+DB.settings.monthlySoll>0) soll=(st&&to<st)?0:+DB.settings.monthlySoll;
   const KIND={Arbeit:'Zeitlohn',Urlaub:'Urlaubslohn',Krankheit:'Krankheitslohn'};
   list.forEach(e=>add(KIND[e.type],hours(e),e.date));
   const r2=n=>Math.round(n*100)/100;
@@ -502,7 +504,8 @@ function vEinst(){
     ${s.rates.slice().sort((a,b)=>b.from.localeCompare(a.from)).map(r=>`<div><span>ab ${dlbl(r.from)}</span><span style="display:flex;gap:10px;align-items:center"><b class="num">${eur(+r.rate)}</b>${s.rates.length>1?`<button class="btn small danger" data-delrate="${r.from}">Entfernen</button>`:''}</span></div>`).join('')}
     <div class="wide"><input type="date" id="rd" style="width:auto;flex:1;text-align:left" value="${iso(new Date())}"><input type="number" step="0.01" id="rv" placeholder="€ / Std." style="width:110px"><button class="btn small" id="radd">Hinzufügen</button></div></div>
    <div class="sec"><span>Arbeitszeit</span></div><div class="list">
-    <div>Soll-Stunden pro Arbeitstag<input data-k="dailySoll" type="number" step="0.01" value="${s.dailySoll}"></div>
+    <div>Soll-Stunden pro Monat (fest)<input data-k="monthlySoll" type="number" step="0.01" min="0" value="${s.monthlySoll||''}" placeholder="0 = nach Arbeitstagen"></div>
+    <div>Stunden pro Arbeitstag (Urlaub, Krank, Wochen-Soll)<input data-k="dailySoll" type="number" step="0.01" value="${s.dailySoll}"></div>
     <div class="wide"><span>Arbeitstage</span><span class="chips">${[1,2,3,4,5,6,0].map(d=>`<button class="chip ${s.workdays.includes(d)?'on':''}" data-wd="${d}">${WD[d]}</button>`).join('')}</span></div>
     <div>Soll zählt ab<input data-k="startDate" type="date" value="${s.startDate}"></div>
     <div>Vorschlag Beginn<input data-k="defaultStart" type="time" value="${s.defaultStart}"></div>
