@@ -30,6 +30,7 @@
   --acc:#2dd4bf;--acc-ink:#062b27;--acc-soft:#123430;
   --work:#2dd4bf;--vac:#fbbf24;--sick:#f87171;--on-sick:#0e1215;--vac-txt:#fbbf24;--hol:#a78bfa;--pos:#4ade80;--neg:#fb923c;--shadow:none;}
 *{box-sizing:border-box}
+body{background:transparent!important} /* Hintergrund liegt auf <html>, damit die Deko dahinter sichtbar ist */
 html,body{margin:0;min-height:100%;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 input,select,textarea{font:inherit;color:var(--txt);background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-height:44px}
@@ -70,6 +71,41 @@ main{flex:1;min-width:0;padding-bottom:40px}
 .sync.wait:focus-visible{outline:2px solid var(--txt);outline-offset:2px}
 @keyframes pulse{50%{opacity:.3}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Jahreszeiten-Deko: schwebt hinter den Karten (z-index -1), das Tier sitzt unten links. Bei "weniger Bewegung" steht alles still. */
+#deco .bit{position:fixed;top:-8vh;z-index:-1;pointer-events:none;opacity:.75;animation:deco-fall linear infinite}
+#deco .bit i{display:block;animation:deco-sway ease-in-out infinite alternate}
+#deco svg{display:block;width:100%;height:auto}
+@keyframes deco-fall{to{transform:translate3d(0,118vh,0)}}
+@keyframes deco-rise{to{transform:translate3d(0,-118vh,0)}}
+@keyframes deco-sway{from{transform:translateX(-14px) rotate(-24deg)}to{transform:translateX(14px) rotate(24deg)}}
+@keyframes deco-flap{to{transform:scaleX(.4)}}
+.deco.winter .bit i{animation-name:none}
+.deco.sommer .bit{top:auto;bottom:-8vh;animation-name:deco-rise}
+.deco.sommer .wings{transform-origin:12px 12px;animation:deco-flap .32s ease-in-out infinite alternate}
+#deco .ground{position:fixed;left:0;right:0;bottom:0;height:0;z-index:-1;pointer-events:none}
+#deco .tuft{position:absolute;bottom:-2px;transform-origin:50% 100%;animation:deco-wind ease-in-out infinite alternate}
+@keyframes deco-wind{from{transform:rotate(-5deg)}to{transform:rotate(6deg)}}
+#deco .pet{position:fixed;left:24px;bottom:52px;width:58px;z-index:3;pointer-events:none}
+#deco .pet svg{filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.35))}
+.deco.herbst .pet{animation:pet-trippel 6s ease-in-out infinite}
+.deco.winter .pet{width:42px;transform-origin:50% 100%;animation:pet-waddle 1.4s ease-in-out infinite alternate}
+.deco.fruehling .pet{width:46px;animation:pet-hop 3.4s ease-in-out infinite}
+.deco.sommer .pet{width:66px;animation:pet-jump 4.5s ease-in-out infinite}
+@keyframes pet-trippel{0%,100%{transform:translateX(0)}45%,55%{transform:translateX(34px)}}
+@keyframes pet-waddle{from{transform:rotate(-6deg)}to{transform:rotate(6deg)}}
+@keyframes pet-hop{0%,58%,100%{transform:translateY(0)}70%{transform:translateY(-13px)}82%{transform:translateY(0)}90%{transform:translateY(-5px)}}
+@keyframes pet-jump{0%,100%{transform:translateY(6px) rotate(9deg)}50%{transform:translateY(-12px) rotate(-11deg)}}
+
+/* Ottocento: Papier und Tinte, Serifenschrift, doppelte Rahmenlinien */
+:root[data-style="ottocento"]{--r:5px;--shadow:none;background-image:radial-gradient(120% 80% at 10% 0%,rgba(150,110,50,.10),transparent 55%),radial-gradient(90% 70% at 100% 100%,rgba(120,80,30,.10),transparent 60%);background-attachment:fixed}
+:root[data-style="ottocento"] body{font-family:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;font-size:15.5px}
+:root[data-style="ottocento"] h1,:root[data-style="ottocento"] .brand{font-variant-caps:small-caps;letter-spacing:.03em;font-weight:600}
+:root[data-style="ottocento"] .card,:root[data-style="ottocento"] .today,:root[data-style="ottocento"] .lscroll,:root[data-style="ottocento"] .mcard{box-shadow:inset 0 0 0 3px var(--surface),inset 0 0 0 4px var(--line)}
+:root[data-style="ottocento"] .btn,:root[data-style="ottocento"] input,:root[data-style="ottocento"] select,:root[data-style="ottocento"] textarea{border-radius:4px}
+:root[data-style="ottocento"] .sec{border-bottom:3px double var(--line);padding-bottom:4px}
+:root[data-style="ottocento"] th{letter-spacing:.08em}
+:root[data-style="ottocento"] .brand img{filter:sepia(1) saturate(2.2) hue-rotate(-28deg) brightness(.8)}
 
 /* Buttons */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;padding:9px 14px;font-weight:600;min-height:40px;background:var(--surface);border:1px solid var(--line);color:var(--txt);white-space:nowrap}
@@ -246,6 +282,8 @@ label{display:block;font-size:12.5px;font-weight:600;color:var(--mut);margin-bot
   dialog form{padding:20px 16px calc(20px + env(safe-area-inset-bottom))}
   .list input,.list select{width:130px}
   .lfilter{grid-template-columns:1fr 1fr}.lfilter .lq{grid-column:span 2}
+  #deco .ground{bottom:calc(60px + env(safe-area-inset-bottom))}
+  #deco.deco .pet{left:10px;bottom:calc(74px + env(safe-area-inset-bottom));width:40px;z-index:-1} /* am Handy hinter den Karten, verdeckt nichts */
   /* Liste am Handy: jede Zeile als Raster – oben Datum, Zeiten, Stunden; darunter die Beschreibung in voller Breite */
   .lscroll{overflow:visible}
   .ltab,.ltab tbody,.ltab tfoot{display:block;min-width:0}
@@ -265,7 +303,7 @@ label{display:block;font-size:12.5px;font-weight:600;color:var(--mut);margin-bot
 }
 @media (max-width:400px){.g3{grid-template-columns:1fr 1fr}.g3>div:last-child{grid-column:span 2}.kpi .v{font-size:18px}.big{font-size:26px}}
 @media print{
-  nav.side,.fab,.noprint,#toast,.sync{display:none!important}
+  nav.side,.fab,.noprint,#toast,.sync,#deco{display:none!important}
   body,main{background:#fff;color:#000}
   .top{position:static;background:#fff}
   .card,.entry,.kpi{box-shadow:none;border-color:#ccc;background:#fff}
@@ -834,7 +872,9 @@ function vEinst(){
     ${(s.holidays||[]).slice().sort((a,b)=>a.date.localeCompare(b.date)).map(h=>`<div><span>${dlbl(h.date)} · ${esc(h.name)}</span><button class="btn small danger" data-del="${h.date}">Entfernen</button></div>`).join('')}
     <div class="wide"><input type="date" id="hd" style="width:auto;flex:1;text-align:left"><input id="hn" placeholder="Eigener Feiertag" style="width:auto;flex:2;text-align:left"><button class="btn small" id="hadd">Hinzufügen</button></div></div>
    <div class="sec"><span>Darstellung</span></div><div class="list">
-    <div>Farbschema<select id="theme"><option value="" ${!theme?'selected':''}>Automatisch</option><option value="light" ${theme==='light'?'selected':''}>Hell</option><option value="dark" ${theme==='dark'?'selected':''}>Dunkel</option></select></div></div>
+    <div>Farbschema<select id="theme"><option value="" ${!theme?'selected':''}>Automatisch</option><option value="light" ${theme==='light'?'selected':''}>Hell</option><option value="dark" ${theme==='dark'?'selected':''}>Dunkel</option></select></div>
+    <div>Farbe<select id="accent">${Object.entries(ACCENTS).map(([k,a])=>`<option value="${k}" ${(lsGet('zeit.accent')||'standard')===k?'selected':''}>${a.name}</option>`).join('')}</select></div>
+    <div>Jahreszeiten-Deko<select id="season"><option value="" ${!lsGet('zeit.season')?'selected':''}>Automatisch (jetzt ${SEASONS[seasonNow()]})</option>${Object.entries(SEASONS).map(([k,l])=>`<option value="${k}" ${lsGet('zeit.season')===k?'selected':''}>${l}</option>`).join('')}<option value="aus" ${lsGet('zeit.season')==='aus'?'selected':''}>Aus</option></select></div></div>
    <div class="sec"><span>Daten</span></div><div class="list">
     <div><span>Backup speichern<div class="muted" style="font-size:12.5px">Alle Einträge und Einstellungen als Datei</div></span><button class="btn small" id="exp">JSON</button></div>
     <div><span>Tabelle für Excel</span><button class="btn small" id="expcsv">CSV</button></div>
@@ -851,6 +891,8 @@ function vEinst(){
   M.querySelectorAll('[data-wd]').forEach(b=>b.onclick=()=>{const d=+b.dataset.wd;s.workdays=s.workdays.includes(d)?s.workdays.filter(x=>x!==d):[...s.workdays,d];saveSettings();render()});
   M.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{s.holidays=s.holidays.filter(h=>h.date!==b.dataset.del);saveSettings();render()});
   M.querySelector('#hadd').onclick=()=>{const d=M.querySelector('#hd').value;if(!d)return toast('Bitte Datum wählen');s.holidays=[...(s.holidays||[]),{date:d,name:M.querySelector('#hn').value||'Feiertag'}];saveSettings();render()};
+  M.querySelector('#accent').onchange=e=>{lsSet('zeit.accent',e.target.value==='standard'?'':e.target.value);applyLook()};
+  M.querySelector('#season').onchange=e=>{lsSet('zeit.season',e.target.value);renderDeco()};
   M.querySelector('#theme').onchange=e=>{try{e.target.value?localStorage.setItem('zeit.theme',e.target.value):localStorage.removeItem('zeit.theme')}catch(x){}applyTheme()};
   M.querySelector('#exp').onclick=()=>download(JSON.stringify({settings:DB.settings,entries:DB.entries,meta:{exported:new Date().toISOString()}},null,1),`Zeiterfassung_Backup_${iso(new Date())}.json`,'application/json');
   M.querySelector('#expcsv').onclick=()=>downloadCsv(DB.entries,'Zeiterfassung_alle.csv');
@@ -861,8 +903,74 @@ function vEinst(){
     if(!confirm(n?`Achtung: ${n===1?'1 Änderung ist':n+' Änderungen sind'} noch nicht gespeichert und gehen beim Abmelden verloren.\n\nTrotzdem abmelden?`:'Abmelden?'))return;
     PEND={entries:{},settings:0};pendSave();cacheClearAll();await sb.auth.signOut();};
 }
-function applyTheme(){let t='';try{t=localStorage.getItem('zeit.theme')||''}catch(e){} if(t)document.documentElement.dataset.theme=t; else delete document.documentElement.dataset.theme;}
-applyTheme();
+// ---------- Aussehen: Farbe, Ottocento, Jahreszeiten-Deko ----------
+// Alles pro Gerät in localStorage (wie das Farbschema), nichts davon geht in die Datenbank.
+// Farben werden als CSS-Variablen am <html> gesetzt; "standard" entfernt sie wieder.
+const ACCENTS={
+  standard:{name:'Petrol (Standard)'},
+  blau:{name:'Blau',l:['#1d4ed8','#fff','#e0e9ff'],d:['#8ab4ff','#06203f','#14263f']},
+  beere:{name:'Beere',l:['#be185d','#fff','#fde4ee'],d:['#f58ac0','#3d0a22','#3a1528']},
+  wald:{name:'Wald',l:['#3f6212','#fff','#e6f0d6'],d:['#a3d977','#16280a','#1e2e14']},
+  bernstein:{name:'Bernstein',l:['#9a4a08','#fff','#fdebd3'],d:['#fbbf24','#2b1a00','#33270d']},
+  flieder:{name:'Flieder',l:['#6d28d9','#fff','#ede4ff'],d:['#c4a8ff','#1e0f45','#281a45']},
+  ottocento:{name:'Ottocento (wie altes Papier)'},
+};
+// Ottocento: Papier, Tinte, Ochsenblut – eigener Satz für hell und dunkel
+const OTTOCENTO={
+  l:{bg:'#f1e7d3',surface:'#f8f0df',surface2:'#eadfc8',line:'#cdbb98',txt:'#2b2118',mut:'#6b5a45',acc:'#7a2e1d','acc-ink':'#f8f0df','acc-soft':'#ead7c8',
+     work:'#7a2e1d',vac:'#9a6a12','vac-txt':'#8a5a0c',sick:'#9b1c1c','on-sick':'#fff',hol:'#4a3a7a',pos:'#3f5f2a',neg:'#8a3b12'},
+  d:{bg:'#1b1611',surface:'#241d16',surface2:'#2e251c',line:'#4a3d2e',txt:'#eadfca',mut:'#b3a48c',acc:'#d9a066','acc-ink':'#1b1611','acc-soft':'#3a2c1c',
+     work:'#d9a066',vac:'#e0b354','vac-txt':'#e0b354',sick:'#e07a6a','on-sick':'#1b1611',hol:'#b9a6e0',pos:'#a9c98a',neg:'#e09a6a'},
+};
+const LOOK_VARS=Object.keys(OTTOCENTO.l);
+const lsGet=k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}};
+const lsSet=(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k)}catch(e){}};
+const isDark=()=>{const t=lsGet('zeit.theme');return t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme:dark)').matches)};
+function applyLook(){
+  const root=document.documentElement, key=ACCENTS[lsGet('zeit.accent')]?lsGet('zeit.accent'):'standard', mode=isDark()?'d':'l';
+  LOOK_VARS.forEach(v=>root.style.removeProperty('--'+v));
+  if(key==='ottocento'){root.dataset.style='ottocento';Object.entries(OTTOCENTO[mode]).forEach(([k,v])=>root.style.setProperty('--'+k,v))}
+  else{delete root.dataset.style; const a=ACCENTS[key][mode];
+    if(a){root.style.setProperty('--acc',a[0]);root.style.setProperty('--acc-ink',a[1]);root.style.setProperty('--acc-soft',a[2]);root.style.setProperty('--work',a[0])}}
+  const meta=document.querySelector('meta[name="theme-color"]'); if(meta) meta.content=getComputedStyle(root).getPropertyValue('--acc').trim()||'#0f766e';
+}
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',applyLook);
+
+// Jahreszeit: automatisch nach Monat (März–Mai Frühling, Juni–Aug. Sommer, Sept.–Nov. Herbst, Dez.–Feb. Winter)
+const SEASONS={fruehling:'Frühling',sommer:'Sommer',herbst:'Herbst',winter:'Winter'};
+const seasonNow=(d=new Date())=>['winter','winter','fruehling','fruehling','fruehling','sommer','sommer','sommer','herbst','herbst','herbst','winter'][d.getMonth()];
+const seasonActive=()=>{const s=lsGet('zeit.season');return s==='aus'?'':SEASONS[s]?s:seasonNow()};
+// Kleine, selbst gezeichnete Vektorgrafiken (keine Emojis – die sehen auf jedem Gerät anders aus)
+const leaf=c=>`<svg viewBox="0 0 24 24"><path d="M12 2c5 3 8 7 8 12a8 8 0 0 1-16 0c0-5 3-9 8-12z" fill="${c}"/><path d="M12 7v14M12 12l4-3M12 15l-4-3" stroke="rgba(0,0,0,.28)" stroke-width="1" fill="none" stroke-linecap="round"/></svg>`;
+const grass=(a='#5fae3a',b='#7cc24a',c='#4c9a2f')=>`<svg viewBox="0 0 40 40"><path d="M20 40C18 26 14 16 7 8c9 6 13 16 15 32z" fill="${a}"/><path d="M20 40c0-16 2-26 6-37 1 12-1 25-3 37z" fill="${b}"/><path d="M21 40c3-12 8-20 15-27-5 9-9 17-11 27z" fill="${c}"/><path d="M19 40c-2-9-6-15-12-19 4 6 7 12 9 19z" fill="${b}"/></svg>`;
+const flower=c=>`<svg viewBox="0 0 40 60"><path d="M20 60V26" stroke="#4c9a2f" stroke-width="2.6" stroke-linecap="round"/><path d="M20 47c-6-1-9-5-10-9 5 0 9 3 10 9z" fill="#5fae3a"/><path d="M20 52c6-1 9-5 10-9-5 0-9 3-10 9z" fill="#6fbb45"/><g fill="${c}"><circle cx="20" cy="9" r="6.5"/><circle cx="11.4" cy="15.2" r="6.5"/><circle cx="28.600" cy="15.2" r="6.5"/><circle cx="14.700" cy="25.300" r="6.5"/><circle cx="25.300" cy="25.300" r="6.5"/></g><circle cx="20" cy="18" r="5" fill="#f2b632"/></svg>`;
+const DECO={
+  herbst:{bits:['#d9772b','#b8431f','#e0a52a','#9a5a2b'].map(leaf),
+    pet:`<svg viewBox="0 0 64 48"><path d="M8 35c0-14 10-24 24-24s22 9 22 22c0 3-1 6-2 8H12c-3 0-4-3-4-6z" fill="#8b5e3c"/><path d="M9 27l-5-6 8 2-3-8 8 4-1-9 7 6 2-9 5 8 5-8 2 9 7-5-2 9 7-2-3 7" fill="none" stroke="#5c3d26" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><path d="M44 28c8 0 14 5 17 9-3 3-9 5-15 5h-2z" fill="#e8c9a0"/><circle cx="50" cy="33" r="1.9" fill="#2b2118"/><circle cx="60.5" cy="37" r="2.2" fill="#2b2118"/><ellipse cx="22" cy="43" rx="4.5" ry="2.2" fill="#5c3d26"/><ellipse cx="40" cy="43" rx="4.5" ry="2.2" fill="#5c3d26"/></svg>`},
+  winter:{bits:[`<svg viewBox="0 0 24 24"><g stroke="#8cc7f0" stroke-width="2" stroke-linecap="round" fill="none"><path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7M12 6l-2.5-2M12 6l2.5-2M12 18l-2.5 2M12 18l2.5 2"/></g></svg>`,
+      `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="#cfe8fa"/></svg>`],
+    pet:`<svg viewBox="0 0 48 64"><ellipse cx="24" cy="36" rx="16" ry="24" fill="#37474f" stroke="#90a4ae" stroke-width="1"/><ellipse cx="24" cy="41" rx="10" ry="17" fill="#fff"/><circle cx="18" cy="24" r="2.4" fill="#fff"/><circle cx="30" cy="24" r="2.4" fill="#fff"/><circle cx="18.5" cy="24.5" r="1.2" fill="#111"/><circle cx="29.5" cy="24.5" r="1.2" fill="#111"/><path d="M20.5 28.5h7L24 33z" fill="#f59e0b"/><path d="M8 34c-4 4-5 10-3 14 3-2 5-6 5-10z" fill="#37474f"/><path d="M40 34c4 4 5 10 3 14-3-2-5-6-5-10z" fill="#37474f"/><ellipse cx="17" cy="60" rx="5.5" ry="2.6" fill="#f59e0b"/><ellipse cx="31" cy="60" rx="5.5" ry="2.6" fill="#f59e0b"/></svg>`},
+  fruehling:{ground:[grass(),grass('#6fbb45','#8fd05c','#57a336'),grass('#57a336','#7cc24a','#3f8a28')],bits:['#f4a6c0','#f9c6d6','#fff1a8'].map(c=>`<svg viewBox="0 0 24 24"><g fill="${c}"><circle cx="12" cy="6" r="4"/><circle cx="6.3" cy="10.2" r="4"/><circle cx="17.7" cy="10.2" r="4"/><circle cx="8.5" cy="16.8" r="4"/><circle cx="15.5" cy="16.8" r="4"/></g><circle cx="12" cy="12" r="2.6" fill="#e9a23b"/></svg>`),
+    pet:`<svg viewBox="0 0 48 64"><ellipse cx="17" cy="14" rx="4.6" ry="13" fill="#e9dccb"/><ellipse cx="17" cy="15" rx="2" ry="9" fill="#f4b6c2"/><ellipse cx="31" cy="14" rx="4.6" ry="13" fill="#e9dccb"/><ellipse cx="31" cy="15" rx="2" ry="9" fill="#f4b6c2"/><ellipse cx="24" cy="50" rx="13" ry="12" fill="#e9dccb"/><circle cx="24" cy="32" r="12" fill="#e9dccb"/><circle cx="19.5" cy="30" r="1.7" fill="#2b2118"/><circle cx="28.5" cy="30" r="1.7" fill="#2b2118"/><path d="M22.4 34h3.2L24 36.2z" fill="#e58aa0"/><path d="M24 36.2v1.6c-1.4 1.5-3 1.5-4 .5m4-.5c1.4 1.5 3 1.5 4 .5" stroke="#2b2118" stroke-width="1" fill="none" stroke-linecap="round"/><ellipse cx="15" cy="61" rx="6" ry="2.6" fill="#d9c9b4"/><ellipse cx="33" cy="61" rx="6" ry="2.6" fill="#d9c9b4"/><ellipse cx="41" cy="57" rx="4.5" ry="5.8" fill="#f2b84b"/><path d="M37 56.5l2 1.6 2-1.6 2 1.6 2-1.6" stroke="#be185d" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>`},
+  sommer:{ground:[flower('#ef5d8f'),grass(),flower('#f4b93e'),grass('#57a336','#7cc24a','#3f8a28'),flower('#8b7cf0'),flower('#ffffff')],bits:['#f59e0b','#ec4899','#6366f1'].map(c=>`<svg viewBox="0 0 24 24"><g class="wings"><path d="M12 12C8 3 2 4 2.5 9.5 3 14 8 14 12 12z" fill="${c}"/><path d="M12 12c4-9 10-8 9.5-2.5C21 14 16 14 12 12z" fill="${c}"/><path d="M12 12c-4 2-7 6-4 8.500 2 1.500 4-3 4-8.500z" fill="${c}" opacity=".75"/><path d="M12 12c4 2 7 6 4 8.500-2 1.500-4-3-4-8.500z" fill="${c}" opacity=".75"/></g><path d="M12 8v10" stroke="#2b2118" stroke-width="1.6" stroke-linecap="round"/></svg>`),
+    pet:`<svg viewBox="0 0 72 48"><path d="M5 30C13 14 31 6 47 12c8 3 14 9 18 16-6-2-10-1-14 2-8 6-22 8-34 4-4-1-8-2-12-4z" fill="#4aa3d8"/><path d="M35 12c2-6 6-9 10-10-1 4 0 8 2 11z" fill="#3a8fc4"/><path d="M5 30c-3-4-3-9-1-13 2 4 5 6 9 7z" fill="#3a8fc4"/><path d="M22 35c10 3 20 2 28-4-6 7-18 9-28 4z" fill="#d7eefb"/><circle cx="54" cy="22" r="1.7" fill="#0f2b3d"/><path d="M58 27c2 .6 4 .6 6 0" stroke="#0f2b3d" stroke-width="1" fill="none" stroke-linecap="round"/></svg>`},
+};
+const DECO_BITS=8, DECO_GROUND=11;
+function renderDeco(){
+  let el=document.getElementById('deco'); const s=seasonActive();
+  if(!s){if(el)el.remove();return}
+  if(!el){el=document.createElement('div');el.id='deco';el.setAttribute('aria-hidden','true');document.body.appendChild(el)}
+  const d=DECO[s];
+  // feste, gleichmäßig verteilte Bahnen statt Zufall: gleiche Wirkung bei jedem Start, keine Häufungen
+  const bits=[...Array(DECO_BITS)].map((_,i)=>{const x=(i*100/DECO_BITS+6+(i%3)*4)%100, dur=12+(i*5)%9, delay=-(i*2.7), size=18+(i*5)%12;
+    return `<span class="bit" style="left:${x.toFixed(1)}%;width:${size}px;animation-duration:${dur}s;animation-delay:${delay.toFixed(1)}s"><i style="animation-duration:${3+(i%3)}s">${d.bits[i%d.bits.length]}</i></span>`}).join('');
+  // Boden (Gras, Blumen): feste Plätze am unteren Rand, wiegen sich leicht im Wind
+  const G=d.ground||[], ground=G.length?`<div class="ground">${[...Array(DECO_GROUND)].map((_,i)=>{const x=6+i*(90/(DECO_GROUND-1)), w=26+(i*7)%16;
+    return `<span class="tuft" style="left:${x.toFixed(1)}%;width:${w}px;margin-left:${-w/2}px;animation-duration:${2.6+(i%4)*.5}s;animation-delay:${-(i*.4).toFixed(1)}s">${G[i%G.length]}</span>`}).join('')}</div>`:'';
+  el.className='deco '+s; el.innerHTML=bits+ground+`<span class="pet">${d.pet}</span>`;
+}
+function applyTheme(){let t='';try{t=localStorage.getItem('zeit.theme')||''}catch(e){} if(t)document.documentElement.dataset.theme=t; else delete document.documentElement.dataset.theme; applyLook();}
+applyTheme(); renderDeco();
 
 document.getElementById('fileIn').onchange=async ev=>{
   const f=ev.target.files[0]; ev.target.value=''; if(!f)return;
