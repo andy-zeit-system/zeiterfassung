@@ -31,6 +31,9 @@ html,body{margin:0;min-height:100%;background:var(--bg);color:var(--txt);font:15
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 input,select,textarea{font:inherit;color:var(--txt);background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-height:44px}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:-1px;border-color:transparent}
+.chk{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:500;color:var(--txt);margin:0;padding:7px 0;cursor:pointer}
+.chk input{width:20px;min-height:20px;height:20px;padding:0;flex:none;accent-color:var(--acc)}
+.chk .muted{margin-left:auto;font-size:13px}
 .num{font-variant-numeric:tabular-nums}
 .muted{color:var(--mut)}
 .pos{color:var(--pos)}.neg{color:var(--neg)}
@@ -222,7 +225,7 @@ const IC={
 };
 
 // ---------- Daten ----------
-const DEFAULT_SETTINGS={name:'',company:'',rates:[{from:'2000-01-01',rate:0}],dailySoll:4.98,monthlySoll:0,workdays:[1,2,3,4,5,6],defaultStart:'08:00',defaultEnd:'12:00',defaultPause:0,holidayState:'NI',holidayPaid:'',holidays:[],vacationPerYear:0,vacationCarry:{},overtimeStart:0,overtimeCarry:{},overtimePayout:{},startDate:''};
+const DEFAULT_SETTINGS={name:'',company:'',rates:[{from:'2000-01-01',rate:0}],dailySoll:4.98,monthlySoll:0,workdays:[1,2,3,4,5,6],defaultStart:'08:00',defaultEnd:'12:00',defaultPause:0,holidayState:'NI',holidayPaid:'',holidays:[],vacationPerYear:0,vacationCarry:{},overtimeStart:0,overtimeCarry:{},overtimePayout:{},rb:{},rbUeb:2.5,rbVoll:5,rbSoFei:10,rbAbg:2.5,startDate:''};
 let DB={settings:{...DEFAULT_SETTINGS},entries:[]}, USER=null, lastFetch=0;
 const cacheKey=()=>'zeit.cache.'+(USER&&USER.id);
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));
@@ -263,7 +266,8 @@ async function saveEntries(list){
   setSync(); return true;
 }
 async function deleteEntry(id){
-  DB.entries=DB.entries.filter(x=>x.id!==id); cacheSave(); render(); setSync('busy');
+  const gone=DB.entries.find(x=>x.id===id);
+  DB.entries=DB.entries.filter(x=>x.id!==id); if(gone)rbClearIfEmpty(gone.date); cacheSave(); render(); setSync('busy');
   const {error}=await sb.from('entries').delete().eq('id',id);
   if(error){setSync('err');toast('Löschen fehlgeschlagen: '+error.message);await refresh(true);return}
   setSync(); toast('Gelöscht');
@@ -311,6 +315,16 @@ function holidaysOf(y){
 const isHoliday=s=>holidaysOf(+s.slice(0,4))[s]||((DB.settings.holidays||[]).find(h=>h.date===s)||{}).name||'';
 // Sonn-/Feiertagszuschlag: liefert 'Sonntag' bzw. den Feiertagsnamen, sonst ''. Maßgeblich ist das Datum des Eintrags.
 const sfName=s=>isHoliday(s)||(parseIso(s).getDay()===0?'Sonntag':'');
+// Rufbereitschaft: je Tag höchstens eine Art, gespeichert in den Einstellungen (settings.rb = {'JJJJ-MM-TT': 'ueb'|'voll'|'abg'}).
+// Sätze: übernommen 2,50 €, voll 5 € (Sonn-/Feiertag 10 €), abgegeben 2,50 € – in den Einstellungen änderbar.
+const RB_KINDS=[['ueb','Rufbereitschaft übernommen'],['voll','Rufbereitschaft'],['abg','Rufbereitschaft abgegeben']];
+const rbLabel=k=>(RB_KINDS.find(x=>x[0]===k)||[])[1]||'';
+const rbOf=d=>{const k=(DB.settings.rb||{})[d];return rbLabel(k)?k:''};
+function rbPrice(k,d){const s=DB.settings,n=(v,def)=>v===undefined||v===null||v===''?def:+v;
+  return k==='ueb'?n(s.rbUeb,2.5):k==='abg'?n(s.rbAbg,2.5):k==='voll'?(sfName(d)?n(s.rbSoFei,10):n(s.rbVoll,5)):0}
+function rbMonth(y,m){const p=y+'-'+pad(m+1)+'-';return Object.keys(DB.settings.rb||{}).filter(d=>d.startsWith(p)&&rbOf(d)).sort().map(d=>({date:d,kind:rbOf(d),eur:rbPrice(rbOf(d),d)}))}
+const rbHead=d=>rbOf(d)?' · '+rbLabel(rbOf(d))+' '+eur(rbPrice(rbOf(d),d)):'';
+function rbClearIfEmpty(d){const s=DB.settings;if(d&&(s.rb||{})[d]&&!DB.entries.some(x=>x.date===d)){const o={...s.rb};delete o[d];s.rb=o;saveSettings()}}
 function isWorkday(d){return DB.settings.workdays.includes(d.getDay())&&!isHoliday(iso(d))}
 const LOHN_ORDER=['Zeitlohn','Urlaubslohn','Krankheitslohn','Feiertagslohn'];
 function monthStats(y,m){
@@ -396,7 +410,7 @@ function vZeit(){
     <div class="week">${days.map(d=>{const s=iso(d);const h=(byDay[s]||[]).reduce((x,e)=>x+hours(e),0);
       return `<button class="day ${s===selDate?'sel':''} ${s===today?'today':''} ${d.getDay()===0?'sun':''} ${isHoliday(s)?'hol':''}" data-d="${s}"><span class="wd">${WD[d.getDay()]}</span><span class="dn">${d.getDate()}</span><span class="dh num">${h?fmt(h,1):''}</span></button>`}).join('')}</div>
     <div class="weeksum num"><span>Woche: ${fmt(wsum)} von ${fmt(wsoll)} Std.</span><span class="${wsum-wsoll>=0?'pos':'neg'}">${fmtS(wsum-wsoll)}</span></div>
-    <div class="sec"><span>${dlong(selDate)}${hol?' · '+esc(hol):''}</span><span class="num">${list.length?fmt(sum)+' Std.':''}</span></div>
+    <div class="sec"><span>${dlong(selDate)}${hol?' · '+esc(hol):''}${rbHead(selDate)}</span><span class="num">${list.length?fmt(sum)+' Std.':''}</span></div>
     ${hol&&!list.length&&st.workdays.includes(sd.getDay())?holidayHtml(selDate):''}
     ${list.map(entryHtml).join('')||(hol?'':`<div class="empty">Noch kein Eintrag an diesem Tag.<br><br><button class="btn pri" id="add2">${IC.plus} Eintrag hinzufügen</button></div>`)}
    </div>`;
@@ -424,7 +438,7 @@ function vMonate(){
   M.querySelectorAll('.mcard').forEach(el=>el.onclick=()=>{monthOpen=el.dataset.k;render();window.scrollTo(0,0)});
 }
 function vMonat(){
-  const[y,m]=monthOpen.split('-').map(Number); const st=monthStats(y,m-1); const s=DB.settings;
+  const[y,m]=monthOpen.split('-').map(Number); const st=monthStats(y,m-1); const s=DB.settings; const rbT=rbMonth(y,m-1);
   const pct=st.soll?Math.round(st.ist/st.soll*100):0;
   const byDay={}; st.list.forEach(e=>(byDay[e.date]=byDay[e.date]||[]).push(e));
   const days=[...new Set([...Object.keys(byDay),...st.feiertage])].sort().reverse();
@@ -443,8 +457,14 @@ function vMonat(){
     <tr><td colspan="2"><b>Stunden mit Zuschlag</b></td><td class="r"><b>${fmt(st.sfStd)}</b></td><td class="r"><b>${hmin(st.sfStd)}</b></td></tr></table>`
     :'<p class="muted" style="margin:0">In diesem Monat wurde an keinem Sonntag oder Feiertag gearbeitet.</p>'}
     <p class="muted" style="font-size:12.5px;margin:10px 0 0">Gezählt wird die Arbeitszeit ohne Pausen an Sonntagen und gesetzlichen Feiertagen (Niedersachsen). Urlaub und Krankheit zählen nicht.</p></div>
+   <div class="card"><h2>Rufbereitschaft</h2>
+    ${rbT.length?`<table class="num"><tr><th>Tag</th><th>Art</th><th class="r">Betrag</th></tr>
+    ${rbT.map(t=>`<tr><td>${dlbl(t.date)}</td><td>${t.kind==='ueb'?'übernommen':t.kind==='abg'?'abgegeben':sfName(t.date)?'Rufbereitschaft ('+esc(sfName(t.date))+')':'Rufbereitschaft'}</td><td class="r">${eur(t.eur)}</td></tr>`).join('')}
+    <tr><td colspan="2"><b>Summe ${rbT.length} ${rbT.length===1?'Tag':'Tage'}</b></td><td class="r"><b>${eur(rbT.reduce((a,t)=>a+t.eur,0))}</b></td></tr></table>`
+    :'<p class="muted" style="margin:0">In diesem Monat ist keine Rufbereitschaft eingetragen.</p>'}
+    <p class="muted" style="font-size:12.5px;margin:10px 0 0">Eintragen: einen Arbeitseintrag des Tages öffnen und die Art ankreuzen. Der Betrag ist nicht im Bruttolohn oben enthalten.</p></div>
    ${days.map(d=>{const l=(byDay[d]||[]).sort((a,b)=>(a.start||'').localeCompare(b.start||''));const sum=l.reduce((a,e)=>a+hours(e),0);
-     return `<div class="sec"><span>${dlbl(d)}</span><span class="num">${l.length>1?fmt(sum)+' Std.':''}</span></div>${st.feiertage.includes(d)?holidayHtml(d):''}${l.map(entryHtml).join('')}`}).join('')||'<div class="empty">Keine Einträge in diesem Monat.</div>'}
+     return `<div class="sec"><span>${dlbl(d)}${rbHead(d)}</span><span class="num">${l.length>1?fmt(sum)+' Std.':''}</span></div>${st.feiertage.includes(d)?holidayHtml(d):''}${l.map(entryHtml).join('')}`}).join('')||'<div class="empty">Keine Einträge in diesem Monat.</div>'}
   </div>`;
   M.querySelector('#back').onclick=()=>{monthOpen=null;render()};
   M.querySelector('#pdf').onclick=()=>window.print();
@@ -474,6 +494,16 @@ function vAuswertung(){
     else body=years.map(y=>{const rs=rows.filter(r=>r.k.startsWith(y)).reverse();const ist=rs.reduce((a,r)=>a+r.st.ist,0),soll=rs.reduce((a,r)=>a+r.st.soll,0),br=rs.reduce((a,r)=>a+r.st.brutto,0);const max=Math.max(...rs.map(r=>Math.max(r.st.ist,r.st.soll)),1);
       return `<div class="sec"><span>${y}</span></div><div class="card"><div class="kpis num"><div class="kpi"><div class="l">Ist</div><div class="v">${fmt(ist,0)}</div></div><div class="kpi"><div class="l">Soll</div><div class="v">${fmt(soll,0)}</div></div><div class="kpi"><div class="l">Brutto</div><div class="v" style="font-size:16px;padding-top:5px">${eur(br)}</div></div></div>
       <table class="num" style="margin-top:12px">${rs.map(r=>`<tr><td style="width:46px">${MON[r.k.slice(5)-1].slice(0,3)}</td><td><div class="bar" style="margin:0"><i style="width:${r.st.ist/max*100}%"></i></div></td><td class="r" style="width:64px">${fmt(r.st.ist,1)}</td></tr>`).join('')}</table></div>`}).join('');
+  } else if(tab==='rb'){
+    // Rufbereitschaft: je Jahr ein Block, je Monat Anzahl nach Art und Betrag
+    const ys=[...new Set([String(new Date().getFullYear()),...Object.keys(s.rb||{}).filter(rbOf).map(d=>d.slice(0,4))])].sort().reverse();
+    const cnt=l=>({ueb:l.filter(t=>t.kind==='ueb').length,voll:l.filter(t=>t.kind==='voll'&&!sfName(t.date)).length,sf:l.filter(t=>t.kind==='voll'&&sfName(t.date)).length,abg:l.filter(t=>t.kind==='abg').length,eur:l.reduce((a,t)=>a+t.eur,0)});
+    const tr=(name,c,b)=>`<tr><td>${b?'<b>':''}${name}${b?'</b>':''}</td>${[c.ueb,c.voll,c.sf,c.abg].map(v=>`<td class="r">${v||''}</td>`).join('')}<td class="r">${b?'<b>':''}${eur(c.eur)}${b?'</b>':''}</td></tr>`;
+    body=ys.map(y=>{const ms=[...Array(12)].map((_,m)=>({m,l:rbMonth(+y,m)})).filter(x=>x.l.length).reverse();const all=ms.flatMap(x=>x.l);
+      return `<div class="sec"><span>${y}</span><span class="num">${all.length} ${all.length===1?'Tag':'Tage'} · ${eur(cnt(all).eur)}</span></div>
+      <div class="card">${ms.length?`<table class="num"><tr><th>Monat</th><th class="r">Übern.</th><th class="r">Rufb.</th><th class="r">So/Feiert.</th><th class="r">Abgeg.</th><th class="r">Betrag</th></tr>
+      ${tr('Summe '+y,cnt(all),true)}${ms.map(x=>tr(MON[x.m],cnt(x.l))).join('')}</table>`:'<p class="muted" style="margin:0">Keine Rufbereitschaft eingetragen.</p>'}</div>`}).join('')+
+      `<p class="muted" style="font-size:12.5px;margin:10px 4px">Sätze: übernommen ${eur(rbPrice('ueb',''))}, Rufbereitschaft ${eur(+(s.rbVoll??5))}, an Sonn- und Feiertagen ${eur(+(s.rbSoFei??10))}, abgegeben ${eur(rbPrice('abg',''))}. Änderbar in den Einstellungen.</p>`;
   } else {
     const type=tab==='urlaub'?'Urlaub':'Krankheit';
     const ys=[...new Set([String(new Date().getFullYear()),...years])].sort().reverse();
@@ -484,7 +514,7 @@ function vAuswertung(){
         <div class="muted num" style="font-size:13px;text-align:right;line-height:1.9">Anspruch ${fmt(s.vacationPerYear)}<br>Übertrag <input type="number" step="0.5" data-carry="${y}" value="${carry}" style="width:64px;min-height:28px;padding:2px 6px;text-align:right"><br>Genommen ${n}</div></div></div>`;}
       return head+(l.map(e=>`<div class="muted" style="font-size:12.5px;margin:10px 4px 4px">${dlbl(e.date)}</div>${entryHtml(e)}`).join('')||'<div class="empty">Keine Einträge.</div>')}).join('');
   }
-  M.innerHTML=topBar('Auswertung')+`<div class="wrap"><div class="tabs noprint">${[['ueber','Überstunden'],['jahre','Jahre'],['urlaub','Urlaub'],['krank','Krankheit']].map(([k,l])=>`<button data-t="${k}" class="${tab===k?'on':''}">${l}</button>`).join('')}</div>${body}</div>`;
+  M.innerHTML=topBar('Auswertung')+`<div class="wrap"><div class="tabs noprint">${[['ueber','Überstunden'],['jahre','Jahre'],['urlaub','Urlaub'],['krank','Krankheit'],['rb','Rufbereitschaft']].map(([k,l])=>`<button data-t="${k}" class="${tab===k?'on':''}">${l}</button>`).join('')}</div>${body}</div>`;
   M.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render()});
   M.querySelectorAll('[data-carry]').forEach(i=>i.onchange=()=>{s.vacationCarry={...(s.vacationCarry||{}),[i.dataset.carry]:parseFloat(i.value)||0};saveSettings();render()});
   M.querySelectorAll('[data-pay]').forEach(i=>i.onchange=()=>{const o={...(s.overtimePayout||{})};const v=parseFloat(i.value)||0;if(v)o[i.dataset.pay]=v;else delete o[i.dataset.pay];s.overtimePayout=o;saveSettings();render()});
@@ -513,6 +543,11 @@ function vEinst(){
     <div>Vorschlag Pause (Min.)<input data-k="defaultPause" type="number" min="0" step="5" value="${s.defaultPause}"></div>
     <div>Urlaubstage pro Jahr<input data-k="vacationPerYear" type="number" step="0.5" value="${s.vacationPerYear}"></div>
     <div>Überstunden-Startsaldo<input data-k="overtimeStart" type="number" step="0.01" value="${s.overtimeStart}"></div></div>
+   <div class="sec"><span>Rufbereitschaft (€ pro Tag)</span></div><div class="list">
+    <div>Rufbereitschaft übernommen<input data-k="rbUeb" type="number" step="0.01" min="0" value="${s.rbUeb??2.5}"></div>
+    <div>Rufbereitschaft<input data-k="rbVoll" type="number" step="0.01" min="0" value="${s.rbVoll??5}"></div>
+    <div>Rufbereitschaft an Sonn- und Feiertagen<input data-k="rbSoFei" type="number" step="0.01" min="0" value="${s.rbSoFei??10}"></div>
+    <div>Rufbereitschaft abgegeben<input data-k="rbAbg" type="number" step="0.01" min="0" value="${s.rbAbg??2.5}"></div></div>
    <div class="sec"><span>Feiertage</span></div><div class="list">
     <div>Gesetzliche Feiertage<select data-k="holidayState"><option value="NI" ${s.holidayState==='NI'?'selected':''}>Niedersachsen</option><option value="" ${!s.holidayState?'selected':''}>keine</option></select></div>
     <div>Feiertag ohne Arbeit<select data-k="holidayPaid"><option value="" ${!s.holidayPaid?'selected':''}>freier Tag, nicht bezahlt</option><option value="1" ${s.holidayPaid?'selected':''}>bezahlt mit Soll-Stunden</option></select></div>
@@ -572,6 +607,7 @@ function downloadCsv(list,name){
 function editEntry(e){
   const s=DB.settings; const isNew=!e;
   e=e?{...e}:{id:uid(),date:selDate,type:'Arbeit',start:s.defaultStart,end:s.defaultEnd,pause:s.defaultPause,note:''};
+  const origDate=e.date; let rb=rbOf(e.date);
   const F=document.getElementById('dlgForm'), D=document.getElementById('dlg');
   const draw=()=>{
     const work=e.type==='Arbeit';
@@ -581,6 +617,8 @@ function editEntry(e){
      ${!work&&isNew?`<div><label for="f_to">Bis</label><input type="date" id="f_to" value="${e._to||e.date}"></div>`:''}</div>
     ${work?`<div class="grid g3"><div><label for="f_start">Beginn</label><input type="time" id="f_start" value="${e.start}" required></div><div><label for="f_end">Ende</label><input type="time" id="f_end" value="${e.end}" required></div><div><label for="f_pause">Pause (Min.)</label><input type="number" inputmode="numeric" id="f_pause" min="0" step="5" value="${e.pause||0}"></div></div>`
      :`<div class="grid g2"><div><label for="f_hours">Stunden pro Tag</label><input type="number" inputmode="decimal" step="0.01" id="f_hours" value="${e.hours??s.dailySoll}"></div><div><label for="f_reason">Grund</label><input id="f_reason" value="${esc(e.reason||(e.type==='Urlaub'?'Ganzer Tag':''))}"></div></div>`}
+    ${work?`<div role="group" aria-label="Rufbereitschaft an diesem Tag"><label>Rufbereitschaft an diesem Tag (höchstens eine Auswahl)</label>
+     ${RB_KINDS.map(([k,l])=>`<label class="chk"><input type="checkbox" data-rb="${k}" ${rb===k?'checked':''}><span>${l}</span><span class="muted num" data-rbp="${k}"></span></label>`).join('')}</div>`:''}
     <div><label for="f_note">Beschreibung</label><textarea id="f_note" rows="3" maxlength="1000" style="resize:vertical" placeholder="Optional">${esc(e.note)}</textarea></div>
     <div class="calc num" id="f_sum"></div>
     <div class="actions">${isNew?'<span></span>':'<button type="button" class="btn danger" id="f_del">Löschen</button>'}
@@ -588,7 +626,10 @@ function editEntry(e){
     F.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{read();e.type=b.dataset.t;draw()});
     F.querySelector('#f_cancel').onclick=()=>D.close();
     const del=F.querySelector('#f_del'); if(del) del.onclick=()=>{if(confirm('Eintrag wirklich löschen?')){D.close();deleteEntry(e.id)}};
+    // Nur eine der drei Rufbereitschafts-Arten kann gewählt sein; ein zweiter Klick auf die gewählte nimmt sie wieder heraus.
+    F.querySelectorAll('[data-rb]').forEach(c=>c.onchange=()=>{rb=c.checked?c.dataset.rb:'';F.querySelectorAll('[data-rb]').forEach(o=>o.checked=o.dataset.rb===rb)});
     const upd=()=>{read();const el=F.querySelector('#f_sum');
+      F.querySelectorAll('[data-rbp]').forEach(p=>p.textContent=eur(rbPrice(p.dataset.rbp,e.date)));
       if(e.type==='Arbeit'&&e.start&&e.end) el.textContent=`= ${fmt(hours(e))} Stunden`;
       else if(isNew&&e._to&&e._to>e.date){let n=0;for(let d=parseIso(e.date);iso(d)<=e._to;d.setDate(d.getDate()+1))if(isWorkday(d))n++;el.textContent=`${n} Arbeitstage werden eingetragen`}
       else el.textContent='';};
@@ -608,6 +649,9 @@ function editEntry(e){
       if(!changed.length) return toast('Keine Arbeitstage im Zeitraum');
       DB.entries.push(...changed);
     } else { const i=DB.entries.findIndex(x=>x.id===base.id); if(i>=0)DB.entries[i]=base; else DB.entries.push(base); changed=[base]; }
+    if(base.type==='Arbeit'){const o={...(s.rb||{})}; if(rb)o[base.date]=rb; else delete o[base.date];
+      if(origDate!==base.date&&!DB.entries.some(x=>x.date===origDate)) delete o[origDate];
+      if(JSON.stringify(o)!==JSON.stringify(s.rb||{})){s.rb=o;saveSettings()}}
     D.close(); selDate=base.date; render();
     saveEntries(changed).then(ok=>ok&&toast(changed.length>1?changed.length+' Einträge gespeichert':'Gespeichert'));
   };
