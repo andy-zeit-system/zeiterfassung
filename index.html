@@ -346,7 +346,7 @@ const IC={
 };
 
 // ---------- Daten ----------
-const DEFAULT_SETTINGS={name:'',company:'',rates:[{from:'2000-01-01',rate:0}],dailySoll:4.98,monthlySoll:0,workdays:[1,2,3,4,5,6],defaultStart:'08:00',defaultEnd:'12:00',defaultPause:0,holidayState:'NI',holidayPaid:'',holidays:[],vacationPerYear:0,vacationCarry:{},overtimeStart:0,overtimeCarry:{},overtimePayout:{},rb:{},rbUeb:2.5,rbVoll:5,rbSoFei:10,rbAbg:2.5,startDate:''};
+const DEFAULT_SETTINGS={name:'',company:'',rates:[{from:'2000-01-01',rate:0}],dailySoll:4.98,monthlySoll:0,workdays:[1,2,3,4,5,6],defaultStart:'08:00',defaultEnd:'12:00',defaultPause:0,holidayState:'NI',holidayPaid:'',holidays:[],vacationPerYear:0,vacationCarry:{},overtimeStart:0,overtimeCarry:{},overtimePayout:{},rb:{},rbUeb:2.5,rbUebSoFei:5,rbVoll:5,rbSoFei:10,rbAbg:2.5,rbAbgSoFei:5,startDate:''};
 let DB={settings:{...DEFAULT_SETTINGS},entries:[]}, USER=null, lastFetch=0;
 const cacheKey=()=>'zeit.cache.'+(USER&&USER.id);
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));
@@ -516,12 +516,13 @@ const isHoliday=s=>holidaysOf(+s.slice(0,4))[s]||((DB.settings.holidays||[]).fin
 // Sonn-/Feiertagszuschlag: liefert 'Sonntag' bzw. den Feiertagsnamen, sonst ''. Maßgeblich ist das Datum des Eintrags.
 const sfName=s=>isHoliday(s)||(parseIso(s).getDay()===0?'Sonntag':'');
 // Rufbereitschaft: je Tag höchstens eine Art, gespeichert in den Einstellungen (settings.rb = {'JJJJ-MM-TT': 'ueb'|'voll'|'abg'}).
-// Sätze: übernommen 2,50 €, voll 5 € (Sonn-/Feiertag 10 €), abgegeben 2,50 € – in den Einstellungen änderbar.
+// Sätze: übernommen 2,50 € (Sonn-/Feiertag 5 €), voll 5 € (Sonn-/Feiertag 10 €), abgegeben 2,50 € (Sonn-/Feiertag 5 €) – in den Einstellungen änderbar.
 const RB_KINDS=[['ueb','Rufbereitschaft übernommen'],['voll','Rufbereitschaft'],['abg','Rufbereitschaft abgegeben']];
 const rbLabel=k=>(RB_KINDS.find(x=>x[0]===k)||[])[1]||'';
 const rbOf=d=>{const k=(DB.settings.rb||{})[d];return rbLabel(k)?k:''};
 function rbPrice(k,d){const s=DB.settings,n=(v,def)=>v===undefined||v===null||v===''?def:+v;
-  return k==='ueb'?n(s.rbUeb,2.5):k==='abg'?n(s.rbAbg,2.5):k==='voll'?(sfName(d)?n(s.rbSoFei,10):n(s.rbVoll,5)):0}
+  const sf=!!(d&&sfName(d));
+  return k==='ueb'?(sf?n(s.rbUebSoFei,5):n(s.rbUeb,2.5)):k==='abg'?(sf?n(s.rbAbgSoFei,5):n(s.rbAbg,2.5)):k==='voll'?(sf?n(s.rbSoFei,10):n(s.rbVoll,5)):0}
 function rbMonth(y,m){const p=y+'-'+pad(m+1)+'-';return Object.keys(DB.settings.rb||{}).filter(d=>d.startsWith(p)&&rbOf(d)).sort().map(d=>({date:d,kind:rbOf(d),eur:rbPrice(rbOf(d),d)}))}
 const rbHead=d=>rbOf(d)?' · '+rbLabel(rbOf(d))+' '+eur(rbPrice(rbOf(d),d)):'';
 function rbClearIfEmpty(d){const s=DB.settings;if(d&&(s.rb||{})[d]&&!DB.entries.some(x=>x.date===d)){const o={...s.rb};delete o[d];s.rb=o;saveSettings()}}
@@ -698,7 +699,7 @@ function vMonat(){
     <p class="muted" style="font-size:12.5px;margin:10px 0 0">Gezählt wird die Arbeitszeit ohne Pausen an Sonntagen und gesetzlichen Feiertagen (Niedersachsen). Urlaub und Krankheit zählen nicht.</p></div>
    <div class="card"><h2>Rufbereitschaft</h2>
     ${rbT.length?`<table class="num"><tr><th>Tag</th><th>Art</th><th class="r">Betrag</th></tr>
-    ${rbT.map(t=>`<tr><td>${dlbl(t.date)}</td><td>${t.kind==='ueb'?'übernommen':t.kind==='abg'?'abgegeben':sfName(t.date)?'Rufbereitschaft ('+esc(sfName(t.date))+')':'Rufbereitschaft'}</td><td class="r">${eur(t.eur)}</td></tr>`).join('')}
+    ${rbT.map(t=>`<tr><td>${dlbl(t.date)}</td><td>${t.kind==='ueb'?'übernommen':t.kind==='abg'?'abgegeben':'Rufbereitschaft'}${sfName(t.date)?' ('+esc(sfName(t.date))+')':''}</td><td class="r">${eur(t.eur)}</td></tr>`).join('')}
     <tr><td colspan="2"><b>Summe ${rbT.length} ${rbT.length===1?'Tag':'Tage'}</b></td><td class="r"><b>${eur(rbT.reduce((a,t)=>a+t.eur,0))}</b></td></tr></table>`
     :'<p class="muted" style="margin:0">In diesem Monat ist keine Rufbereitschaft eingetragen.</p>'}
     <p class="muted" style="font-size:12.5px;margin:10px 0 0">Eintragen: einen Arbeitseintrag des Tages öffnen und die Art ankreuzen. Der Betrag ist nicht im Bruttolohn oben enthalten.</p></div>
@@ -820,13 +821,14 @@ function vAuswertung(){
   } else if(tab==='rb'){
     // Rufbereitschaft: je Jahr ein Block, je Monat Anzahl nach Art und Betrag
     const ys=[...new Set([String(new Date().getFullYear()),...Object.keys(s.rb||{}).filter(rbOf).map(d=>d.slice(0,4))])].sort().reverse();
-    const cnt=l=>({ueb:l.filter(t=>t.kind==='ueb').length,voll:l.filter(t=>t.kind==='voll'&&!sfName(t.date)).length,sf:l.filter(t=>t.kind==='voll'&&sfName(t.date)).length,abg:l.filter(t=>t.kind==='abg').length,eur:l.reduce((a,t)=>a+t.eur,0)});
-    const tr=(name,c,b)=>`<tr><td>${b?'<b>':''}${name}${b?'</b>':''}</td>${[c.ueb,c.voll,c.sf,c.abg].map(v=>`<td class="r">${v||''}</td>`).join('')}<td class="r">${b?'<b>':''}${eur(c.eur)}${b?'</b>':''}</td></tr>`;
+    // „davon So/F.“ zählt alle drei Arten an Sonn- und Feiertagen; diese Tage stehen zusätzlich in ihrer Art-Spalte.
+    const cnt=l=>({ueb:l.filter(t=>t.kind==='ueb').length,voll:l.filter(t=>t.kind==='voll').length,sf:l.filter(t=>sfName(t.date)).length,abg:l.filter(t=>t.kind==='abg').length,eur:l.reduce((a,t)=>a+t.eur,0)});
+    const tr=(name,c,b)=>`<tr><td>${b?'<b>':''}${name}${b?'</b>':''}</td>${[c.ueb,c.voll,c.abg,c.sf].map(v=>`<td class="r">${v||''}</td>`).join('')}<td class="r">${b?'<b>':''}${eur(c.eur)}${b?'</b>':''}</td></tr>`;
     body=ys.map(y=>{const ms=[...Array(12)].map((_,m)=>({m,l:rbMonth(+y,m)})).filter(x=>x.l.length).reverse();const all=ms.flatMap(x=>x.l);
       return `<div class="sec"><span>${y}</span><span class="num">${all.length} ${all.length===1?'Tag':'Tage'} · ${eur(cnt(all).eur)}</span></div>
-      <div class="card rbcard">${ms.length?`<table class="num rbt"><tr><th>Monat</th><th class="r"><span class="hide-m">Übern.</span><span class="show-m">Üb.</span></th><th class="r"><span class="hide-m">Rufb.</span><span class="show-m">Rb.</span></th><th class="r"><span class="hide-m">So/Feiert.</span><span class="show-m">So/F.</span></th><th class="r"><span class="hide-m">Abgeg.</span><span class="show-m">Ab.</span></th><th class="r">Betrag</th></tr>
+      <div class="card rbcard">${ms.length?`<table class="num rbt"><tr><th>Monat</th><th class="r"><span class="hide-m">Übern.</span><span class="show-m">Üb.</span></th><th class="r"><span class="hide-m">Rufb.</span><span class="show-m">Rb.</span></th><th class="r"><span class="hide-m">Abgeg.</span><span class="show-m">Ab.</span></th><th class="r"><span class="hide-m">davon So/Feiert.</span><span class="show-m">So/F.</span></th><th class="r">Betrag</th></tr>
       ${tr('Summe '+y,cnt(all),true)}${ms.map(x=>tr(MON[x.m],cnt(x.l))).join('')}</table>`:'<p class="muted" style="margin:0">Keine Rufbereitschaft eingetragen.</p>'}</div>`}).join('')+
-      `<p class="muted" style="font-size:12.5px;margin:10px 4px">Sätze: übernommen ${eur(rbPrice('ueb',''))}, Rufbereitschaft ${eur(+(s.rbVoll??5))}, an Sonn- und Feiertagen ${eur(+(s.rbSoFei??10))}, abgegeben ${eur(rbPrice('abg',''))}. Änderbar in den Einstellungen.</p>`;
+      `<p class="muted" style="font-size:12.5px;margin:10px 4px">Sätze werktags / an Sonn- und Feiertagen: übernommen ${eur(rbPrice('ueb',''))} / ${eur(+(s.rbUebSoFei??5))}, Rufbereitschaft ${eur(+(s.rbVoll??5))} / ${eur(+(s.rbSoFei??10))}, abgegeben ${eur(rbPrice('abg',''))} / ${eur(+(s.rbAbgSoFei??5))}. Änderbar in den Einstellungen.</p>`;
   } else {
     const type=tab==='urlaub'?'Urlaub':'Krankheit';
     const ys=[...new Set([String(new Date().getFullYear()),...years])].sort().reverse();
@@ -868,9 +870,11 @@ function vEinst(){
     <div>Überstunden-Startsaldo<input data-k="overtimeStart" type="number" step="0.01" value="${s.overtimeStart}"></div></div>
    <div class="sec"><span>Rufbereitschaft (€ pro Tag)</span></div><div class="list">
     <div>Rufbereitschaft übernommen<input data-k="rbUeb" type="number" step="0.01" min="0" value="${s.rbUeb??2.5}"></div>
+    <div>Übernommen an Sonn- und Feiertagen<input data-k="rbUebSoFei" type="number" step="0.01" min="0" value="${s.rbUebSoFei??5}"></div>
     <div>Rufbereitschaft<input data-k="rbVoll" type="number" step="0.01" min="0" value="${s.rbVoll??5}"></div>
     <div>Rufbereitschaft an Sonn- und Feiertagen<input data-k="rbSoFei" type="number" step="0.01" min="0" value="${s.rbSoFei??10}"></div>
-    <div>Rufbereitschaft abgegeben<input data-k="rbAbg" type="number" step="0.01" min="0" value="${s.rbAbg??2.5}"></div></div>
+    <div>Rufbereitschaft abgegeben<input data-k="rbAbg" type="number" step="0.01" min="0" value="${s.rbAbg??2.5}"></div>
+    <div>Abgegeben an Sonn- und Feiertagen<input data-k="rbAbgSoFei" type="number" step="0.01" min="0" value="${s.rbAbgSoFei??5}"></div></div>
    <div class="sec"><span>Feiertage</span></div><div class="list">
     <div>Gesetzliche Feiertage<select data-k="holidayState"><option value="NI" ${s.holidayState==='NI'?'selected':''}>Niedersachsen</option><option value="" ${!s.holidayState?'selected':''}>keine</option></select></div>
     <div>Feiertag ohne Arbeit<select data-k="holidayPaid"><option value="" ${!s.holidayPaid?'selected':''}>freier Tag, nicht bezahlt</option><option value="1" ${s.holidayPaid?'selected':''}>bezahlt mit Soll-Stunden</option></select></div>
