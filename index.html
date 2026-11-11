@@ -31,6 +31,8 @@ html,body{margin:0;min-height:100%;background:var(--bg);color:var(--txt);font:15
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 input,select,textarea{font:inherit;color:var(--txt);background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-height:44px}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:-1px;border-color:transparent}
+.lblrow{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;margin-bottom:5px}.lblrow label{margin:0}
+.mic{display:inline-flex;align-items:center;gap:6px}.mic.on{background:var(--neg);border-color:transparent;color:#fff}
 input.plain{border-color:transparent;background:transparent;padding:2px 0;min-height:28px;text-align:right;-moz-appearance:textfield;appearance:textfield;cursor:text}
 input.plain::-webkit-outer-spin-button,input.plain::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .warn{border:1px solid var(--neg);border-radius:10px;padding:10px 12px;margin:10px 0 16px;font-size:14px;line-height:1.5}
@@ -619,7 +621,21 @@ function editEntry(e){
     const work=gross-own,need=work>=540?45:work>=360?30:0,pause=own+gaps;
     return need&&pause<need?{work,need,pause,miss:need-pause,n:day.length}:null};
   const F=document.getElementById('dlgForm'), D=document.getElementById('dlg');
+  // Diktieren ins Feld „Beschreibung“ über die Spracherkennung des Browsers (nicht in jedem Browser vorhanden; dann fehlt der Knopf).
+  // Es wird Satz für Satz erkannt und nach jeder Sprechpause neu gestartet – das vermeidet doppelte Wörter auf Android.
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition; let rec=null, micOn=false;
+  const MIC='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1M12 18v4"/></svg>';
+  const micStop=()=>{micOn=false;if(rec){try{rec.abort()}catch(x){}}};
+  const micShow=()=>{const b=F.querySelector('#f_mic');if(!b)return;b.classList.toggle('on',micOn);b.setAttribute('aria-pressed',micOn);b.querySelector('span').textContent=micOn?'Aufnahme läuft – beenden':'Diktieren'};
+  const micStart=()=>{const ta=F.querySelector('#f_note');if(!ta){micOn=false;return}
+    const base=ta.value.replace(/\s+$/,'');
+    rec=new SR();rec.lang='de-DE';rec.continuous=false;rec.interimResults=true;
+    rec.onresult=ev=>{const t=Array.from(ev.results).map(r=>r[0].transcript).join('').trim();ta.value=((base?base+' ':'')+t).slice(0,1000);e.note=ta.value};
+    rec.onerror=ev=>{micOn=false;if(ev.error!=='aborted')toast(ev.error==='not-allowed'||ev.error==='service-not-allowed'?'Mikrofon ist für diese Seite nicht erlaubt':ev.error==='no-speech'?'Nichts gehört – Aufnahme beendet':ev.error==='network'?'Spracherkennung braucht Internet':'Spracherkennung: '+ev.error)};
+    rec.onend=()=>{rec=null;if(micOn&&D.open){try{micStart()}catch(x){micOn=false}}micShow()};
+    rec.start()};
   const draw=()=>{
+    micStop();
     const work=e.type==='Arbeit';
     F.innerHTML=`<h2>${isNew?'Neuer Eintrag':'Eintrag bearbeiten'}</h2>
     <div class="seg">${['Arbeit','Urlaub','Krankheit'].map(t=>`<button type="button" data-t="${t}" class="${e.type===t?'on':''}">${t}</button>`).join('')}</div>
@@ -629,13 +645,14 @@ function editEntry(e){
      :`<div class="grid g2"><div><label for="f_hours">Stunden pro Tag</label><input type="number" inputmode="decimal" step="0.01" id="f_hours" value="${e.hours??s.dailySoll}"></div><div><label for="f_reason">Grund</label><input id="f_reason" value="${esc(e.reason||(e.type==='Urlaub'?'Ganzer Tag':''))}"></div></div>`}
     ${work?`<div role="group" aria-label="Rufbereitschaft an diesem Tag"><label>Rufbereitschaft an diesem Tag (höchstens eine Auswahl)</label>
      ${RB_KINDS.map(([k,l])=>`<label class="chk"><input type="checkbox" data-rb="${k}" ${rb===k?'checked':''}><span>${l}</span><span class="muted num" data-rbp="${k}"></span></label>`).join('')}</div>`:''}
-    <div><label for="f_note">Beschreibung</label><textarea id="f_note" rows="3" maxlength="1000" style="resize:vertical" placeholder="Optional">${esc(e.note)}</textarea></div>
+    <div><div class="lblrow"><label for="f_note">Beschreibung</label>${SR?`<button type="button" class="btn small mic" id="f_mic" aria-pressed="false">${MIC}<span>Diktieren</span></button>`:''}</div><textarea id="f_note" rows="3" maxlength="1000" style="resize:vertical" placeholder="Optional">${esc(e.note)}</textarea></div>
     <div class="calc num" id="f_sum"></div>
     <div id="f_warn" role="alert"></div>
     <div class="actions">${isNew?'<span></span>':'<button type="button" class="btn danger" id="f_del">Löschen</button>'}
      <span><button type="button" class="btn" id="f_cancel">Abbrechen</button><button class="btn pri" id="f_ok">Speichern</button></span></div>`;
     F.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{read();e.type=b.dataset.t;draw()});
     F.querySelector('#f_cancel').onclick=()=>D.close();
+    const mic=F.querySelector('#f_mic'); if(mic) mic.onclick=()=>{if(micOn){micStop();micShow();return} micOn=true;try{micStart()}catch(x){micOn=false;rec=null;toast('Spracherkennung konnte nicht starten')}micShow()};
     const del=F.querySelector('#f_del'); if(del) del.onclick=()=>{if(confirm('Eintrag wirklich löschen?')){D.close();deleteEntry(e.id)}};
     // Nur eine der drei Rufbereitschafts-Arten kann gewählt sein; ein zweiter Klick auf die gewählte nimmt sie wieder heraus.
     F.querySelectorAll('[data-rb]').forEach(c=>c.onchange=()=>{rb=c.checked?c.dataset.rb:'';F.querySelectorAll('[data-rb]').forEach(o=>o.checked=o.dataset.rb===rb)});
@@ -673,6 +690,7 @@ function editEntry(e){
     D.close(); selDate=base.date; render();
     saveEntries(changed).then(ok=>ok&&toast(changed.length>1?changed.length+' Einträge gespeichert':'Gespeichert'));
   };
+  D.addEventListener('close',micStop,{once:true});
   draw(); D.showModal();
 }
 
