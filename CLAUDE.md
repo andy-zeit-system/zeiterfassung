@@ -12,7 +12,8 @@ Zeiterfassungs-App für PC und Handy (Ersatz für eine frühere Fremd-App). Spra
 ## Fachliche Regeln (nicht ohne Rückfrage ändern)
 - Soll = `dailySoll` (4,98 Std.) je Arbeitstag (Mo–Sa), gezählt ab `startDate`.
 - Urlaub/Krankheit zählen mit ihren Stunden (Standard = dailySoll) als Ist.
-- Gesetzliche Feiertage Niedersachsen (Osterformel) werden **nur** an Arbeitstagen **ohne** Eintrag als bezahlte Stunden („Feiertagslohn“) gutgeschrieben.
+- Gesetzliche Feiertage Niedersachsen (Osterformel) werden erkannt. Feiertage ohne Eintrag sind **freie Tage ohne Bezahlung** (Vorgabe vom 11.11.2026, Einstellung `holidayPaid` leer). Nur wenn `holidayPaid` gesetzt ist, werden sie an Arbeitstagen ohne Eintrag als „Feiertagslohn“ gutgeschrieben (alte ACHIM-Regel).
+- Arbeitsstunden an Sonntagen und Feiertagen werden pro Monat für den Zuschlag zusammengezählt (`sfStd`, `sfTage` in `monthStats`).
 - Stundenlohn hat einen Verlauf (`rates: [{from, rate}]`), gilt ab Datum.
 - Lohnabrechnung: Zeitlohn, Urlaubslohn, Krankheitslohn, Feiertagslohn – ohne Zuschläge.
 - Die Rechenlogik (`monthStats`) wurde für alle Monate gegen die alte App geprüft (Ist/Soll/Brutto stimmen). Bei Änderungen daran vorher/nachher vergleichen.
