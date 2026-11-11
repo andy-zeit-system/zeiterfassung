@@ -130,16 +130,6 @@ main{flex:1;min-width:0;padding-bottom:40px}
 .entry .note{font-size:13.5px;margin-top:5px;white-space:pre-wrap;overflow-wrap:anywhere}
 .entry .h{font-weight:700;font-size:16px;white-space:nowrap}
 .empty{text-align:center;color:var(--mut);padding:32px 12px;border:1.5px dashed var(--line);border-radius:var(--r)}
-.quick{display:flex;flex-direction:column;gap:10px;max-width:340px;margin:18px auto 0}
-.btn.big{flex-direction:column;gap:2px;min-height:60px;font-size:16px;white-space:normal}
-.btn.big small{font-size:13px;font-weight:500;opacity:.85}
-.qrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px}
-.qlbl{flex-basis:100%;font-size:13px;font-weight:600;color:var(--mut)}
-.qnote{flex-basis:100%;font-size:13px;color:var(--vac-txt)}
-.qchip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:8px 14px;border-radius:10px;border:1px solid var(--acc);background:var(--acc-soft);color:var(--txt);font-weight:700;font-size:15px}
-.qchip span{font-weight:500}
-.qchip:hover{background:var(--surface2)}
-.qchip:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 
 /* Monate */
 .mcard{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow)}
@@ -567,44 +557,14 @@ function vZeit(){
     <div class="weeksum num"><span>${partial?`Woche bis heute: ${fmt(wist)} von ${fmt(wsoll)} Std.`:`Woche: ${fmt(wsum)} von ${fmt(wsoll)} Std.`}</span><span class="${wist-wsoll>=0?'pos':'behind'}">${fmtS(wist-wsoll)}</span></div>
     <div class="sec"><span>${dlong(selDate)}${hol?' · '+esc(hol):''}${rbHead(selDate)}</span><span class="num">${list.length?fmt(sum)+' Std.':''}</span></div>
     ${hol&&!list.length&&st.workdays.includes(sd.getDay())?holidayHtml(selDate):''}
-    ${list.map(entryHtml).join('')||(hol?'':emptyDayHtml(sd))}
+    ${list.map(entryHtml).join('')||(hol?'':`<div class="empty">Noch kein Eintrag an diesem Tag.<br><br><button class="btn pri" id="add2">${IC.plus} Eintrag hinzufügen</button></div>`)}
    </div>`;
   M.querySelectorAll('.day').forEach(el=>el.onclick=()=>{selDate=el.dataset.d;render()});
   const shift=n=>{const d=parseIso(selDate);d.setDate(d.getDate()+n);selDate=iso(d);render()};
   M.querySelector('#prev').onclick=()=>shift(-7); M.querySelector('#next').onclick=()=>shift(7);
   M.querySelectorAll('#today,#t_go').forEach(el=>el.onclick=()=>{selDate=iso(new Date());render()});
   M.querySelectorAll('#add,#add2').forEach(el=>el.onclick=()=>editEntry(null));
-  bindQuick();
   bindEntries();
-}
-
-// ---------- Schnell eintragen (leerer Tag) ----------
-// "Wie üblich" nimmt Beginn/Ende/Pause aus den Einstellungen, "Wie am …" kopiert die Arbeitszeiten
-// des letzten Tages mit Arbeit. Beides nur für heute und vergangene Tage. Rufbereitschaft wird nicht kopiert.
-function lastWorkDay(before){
-  let best='';DB.entries.forEach(e=>{if(e.type==='Arbeit'&&e.date<before&&e.date>best)best=e.date});
-  return best?DB.entries.filter(e=>e.type==='Arbeit'&&e.date===best).sort((x,y)=>x.start.localeCompare(y.start)):[];
-}
-const spanLbl=list=>list.map(e=>`${e.start}–${e.end}`).join(', ');
-function emptyDayHtml(sd){
-  const st=DB.settings, ds=iso(sd), canQuick=ds<=iso(new Date())&&st.workdays.includes(sd.getDay());
-  const usual={start:st.defaultStart,end:st.defaultEnd,pause:+st.defaultPause||0}, last=lastWorkDay(ds);
-  const quick=canQuick?`<button class="btn pri big" id="q_usual">Wie üblich eintragen<small class="num">${usual.start}–${usual.end}${usual.pause?' · Pause '+pauseLbl(usual.pause):''}</small></button>
-    ${last.length?`<button class="btn big" id="q_last">Wie am ${dlbl(last[0].date).slice(0,-4)}<small class="num">${spanLbl(last)}</small></button>`:''}`:'';
-  return `<div class="empty">Noch kein Eintrag an diesem Tag.<div class="quick">${quick}<button class="btn${canQuick?'':' pri'}" id="add2">${IC.plus} ${canQuick?'Andere Zeiten…':'Eintrag hinzufügen'}</button></div></div>`;
-}
-function quickSave(list,date=selDate){
-  const made=list.map(x=>({id:uid(),date,type:'Arbeit',start:x.start,end:x.end,pause:+x.pause||0,note:''}));
-  DB.entries.push(...made); selDate=date; render();
-  saveEntries(made).then(ok=>toast(ok?'Eingetragen: '+spanLbl(made):'Keine Verbindung – wird automatisch nachgesendet'));
-}
-function bindQuick(){
-  const u=M.querySelector('#q_usual'), l=M.querySelector('#q_last'), st=DB.settings;
-  if(u) u.onclick=()=>{const p=+st.defaultPause||0, work=toMin(st.defaultEnd)-toMin(st.defaultStart)-p;
-    // Würde die gesetzliche Pause fehlen, den normalen Dialog öffnen – dort erscheint die Pausen-Erinnerung.
-    if(work>=360&&p<(work>=540?45:30)) return editEntry(null);
-    quickSave([{start:st.defaultStart,end:st.defaultEnd,pause:p}])};
-  if(l) l.onclick=()=>quickSave(lastWorkDay(selDate));
 }
 
 // ---------- Ansicht: Monate ----------
@@ -821,33 +781,11 @@ function editEntry(e){
     rec.onerror=ev=>{micOn=false;if(ev.error!=='aborted')toast(ev.error==='not-allowed'||ev.error==='service-not-allowed'?'Mikrofon ist für diese Seite nicht erlaubt':ev.error==='no-speech'?'Nichts gehört – Aufnahme beendet':ev.error==='network'?'Spracherkennung braucht Internet':'Spracherkennung: '+ev.error)};
     rec.onend=()=>{rec=null;if(micOn&&D.open){try{micStart()}catch(x){micOn=false}}micShow()};
     rec.start()};
-  // Schnell eintragen im Dialog: bei jedem neuen Arbeits-Eintrag (auch für spätere Tage).
-  // Hat der Tag schon Arbeitszeiten, steht ein Hinweis dabei, damit nichts doppelt eingetragen wird.
-  // Ein Zeitraum -> Felder füllen und normal speichern (mit Pausen-Erinnerung und Rufbereitschaft).
-  // Mehrere Zeiträume "wie am …" -> alle direkt für das gewählte Datum speichern.
-  let qLast=[];
-  const quickHtml=()=>{
-    if(!isNew||e.type!=='Arbeit') return '';
-    qLast=lastWorkDay(e.date);
-    const have=DB.entries.filter(x=>x.date===e.date&&x.type==='Arbeit').reduce((a,x)=>a+hours(x),0);
-    return `<div class="qrow" role="group" aria-label="Mit einem Tipp speichern"><span class="qlbl">Mit einem Tipp speichern</span>
-      ${have?`<span class="qnote">An diesem Tag sind schon <b class="num">${fmt(have)} Std.</b> eingetragen – der Knopf fügt weitere Zeiten hinzu.</span>`:''}
-      <button type="button" class="qchip" id="f_qu">Wie üblich <span class="num">${s.defaultStart}–${s.defaultEnd}</span></button>
-      ${qLast.length?`<button type="button" class="qchip" id="f_ql">Wie am ${dlbl(qLast[0].date).slice(0,-4)} <span class="num">${spanLbl(qLast)}</span></button>`:''}</div>`;
-  };
-  const fillSave=x=>{F.querySelector('#f_start').value=x.start;F.querySelector('#f_end').value=x.end;F.querySelector('#f_pause').value=+x.pause||0;F.requestSubmit()};
-  const bindQuickDlg=()=>{
-    const qu=F.querySelector('#f_qu'), ql=F.querySelector('#f_ql');
-    if(qu) qu.onclick=()=>fillSave({start:s.defaultStart,end:s.defaultEnd,pause:s.defaultPause});
-    if(ql) ql.onclick=()=>{if(qLast.length===1) return fillSave(qLast[0]);
-      const d=F.querySelector('#f_date').value||e.date; D.close(); quickSave(qLast,d)};
-  };
   const draw=()=>{
     micStop();
     const work=e.type==='Arbeit';
     F.innerHTML=`<h2>${isNew?'Neuer Eintrag':'Eintrag bearbeiten'}</h2>
     <div class="seg">${['Arbeit','Urlaub','Krankheit'].map(t=>`<button type="button" data-t="${t}" class="${e.type===t?'on':''}">${t}</button>`).join('')}</div>
-    ${quickHtml()}
     <div class="grid ${!work&&isNew?'g2':''}"><div><label for="f_date">${work||!isNew?'Datum':'Von'}</label><input type="date" id="f_date" value="${e.date}" required></div>
      ${!work&&isNew?`<div><label for="f_to">Bis</label><input type="date" id="f_to" value="${e._to||e.date}"></div>`:''}</div>
     ${work?`<div class="grid g3"><div><label for="f_start">Beginn</label><input type="time" id="f_start" value="${e.start}" required></div><div><label for="f_end">Ende</label><input type="time" id="f_end" value="${e.end}" required></div><div><label for="f_pause">Pause (Min.)</label><input type="number" inputmode="numeric" id="f_pause" min="0" step="5" value="${e.pause||0}"></div></div>`
@@ -860,8 +798,6 @@ function editEntry(e){
     <div class="actions">${isNew?'<span></span>':'<button type="button" class="btn danger" id="f_del">Löschen</button>'}
      <span><button type="button" class="btn" id="f_cancel">Abbrechen</button><button class="btn pri" id="f_ok">Speichern</button></span></div>`;
     F.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{read();e.type=b.dataset.t;draw()});
-    bindQuickDlg();
-    if(isNew&&work){const fd=F.querySelector('#f_date'); fd.onchange=()=>{read();draw()}} // Schnell-Knöpfe passen sich dem Datum an
     F.querySelector('#f_cancel').onclick=()=>D.close();
     const mic=F.querySelector('#f_mic'); if(mic) mic.onclick=()=>{if(micOn){micStop();micShow();return} micOn=true;try{micStart()}catch(x){micOn=false;rec=null;toast('Spracherkennung konnte nicht starten')}micShow()};
     const del=F.querySelector('#f_del'); if(del) del.onclick=()=>{if(confirm('Eintrag wirklich löschen?')){D.close();deleteEntry(e.id)}};
