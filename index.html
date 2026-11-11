@@ -222,7 +222,7 @@ const IC={
 };
 
 // ---------- Daten ----------
-const DEFAULT_SETTINGS={name:'',company:'',rates:[{from:'2000-01-01',rate:0}],dailySoll:4.98,workdays:[1,2,3,4,5,6],defaultStart:'08:00',defaultEnd:'12:00',defaultPause:0,holidayState:'NI',holidays:[],vacationPerYear:0,vacationCarry:{},overtimeStart:0,startDate:''};
+const DEFAULT_SETTINGS={name:'',company:'',rates:[{from:'2000-01-01',rate:0}],dailySoll:4.98,workdays:[1,2,3,4,5,6],defaultStart:'08:00',defaultEnd:'12:00',defaultPause:0,holidayState:'NI',holidayPaid:'',holidays:[],vacationPerYear:0,vacationCarry:{},overtimeStart:0,startDate:''};
 let DB={settings:{...DEFAULT_SETTINGS},entries:[]}, USER=null, lastFetch=0;
 const cacheKey=()=>'zeit.cache.'+(USER&&USER.id);
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));
@@ -322,8 +322,8 @@ function monthStats(y,m){
   for(let d=new Date(y,m,1);d.getMonth()===m;d.setDate(d.getDate()+1)){
     const s=iso(d); if((st&&s<st)||!DB.settings.workdays.includes(d.getDay())) continue;
     soll+=ds;
-    // Feiertag auf Arbeitstag ohne Eintrag: wird bezahlt gutgeschrieben (Feiertagslohn)
-    if(isHoliday(s) && !list.some(e=>e.date===s)){ add('Feiertagslohn',ds,s); feiertage.push(s); }
+    // Feiertag auf Arbeitstag ohne Eintrag: freier Tag. Nur wenn in den Einstellungen so gewählt, wird er bezahlt gutgeschrieben (Feiertagslohn).
+    if(isHoliday(s) && !list.some(e=>e.date===s)){ if(DB.settings.holidayPaid) add('Feiertagslohn',ds,s); feiertage.push(s); }
   }
   const KIND={Arbeit:'Zeitlohn',Urlaub:'Urlaubslohn',Krankheit:'Krankheitslohn'};
   list.forEach(e=>add(KIND[e.type],hours(e),e.date));
@@ -373,7 +373,7 @@ function entryHtml(e){
   const line=e.type==='Arbeit'?`${e.start} – ${e.end}${e.pause?' · Pause '+pauseLbl(e.pause):''}`:(e.reason||'Ganzer Tag');
   return `<button class="entry ${e.type}" data-id="${esc(e.id)}"><span class="stripe"></span><span class="body"><div class="t">${e.type}${e.type==='Arbeit'&&sfName(e.date)?`<span class="tag">${esc(sfName(e.date))}</span>`:''}</div><div class="s num">${esc(line)}</div>${e.note?`<div class="note">${esc(e.note)}</div>`:''}</span><span class="h num">${fmt(hours(e))} h</span></button>`;
 }
-const holidayHtml=d=>`<div class="entry Feiertag"><span class="stripe"></span><span class="body"><div class="t">Feiertag</div><div class="s">${esc(isHoliday(d))}</div></span><span class="h num">${fmt(DB.settings.dailySoll)} h</span></div>`;
+const holidayHtml=d=>`<div class="entry Feiertag"><span class="stripe"></span><span class="body"><div class="t">Feiertag</div><div class="s">${esc(isHoliday(d))}</div></span><span class="h num">${DB.settings.holidayPaid?fmt(DB.settings.dailySoll)+' h':'frei'}</span></div>`;
 function bindEntries(){M.querySelectorAll('button.entry').forEach(el=>el.onclick=()=>editEntry(DB.entries.find(e=>e.id===el.dataset.id)));}
 
 // ---------- Ansicht: Zeiten ----------
@@ -501,7 +501,8 @@ function vEinst(){
     <div>Überstunden-Startsaldo<input data-k="overtimeStart" type="number" step="0.01" value="${s.overtimeStart}"></div></div>
    <div class="sec"><span>Feiertage</span></div><div class="list">
     <div>Gesetzliche Feiertage<select data-k="holidayState"><option value="NI" ${s.holidayState==='NI'?'selected':''}>Niedersachsen</option><option value="" ${!s.holidayState?'selected':''}>keine</option></select></div>
-    <div class="muted" style="font-size:13px;display:block;line-height:1.6">Feiertage an Arbeitstagen ohne Eintrag werden mit den Soll-Stunden bezahlt gutgeschrieben.<br>${new Date().getFullYear()}: ${Object.entries(holidaysOf(new Date().getFullYear())).map(([d,n])=>esc(n)+' ('+d.slice(8)+'.'+d.slice(5,7)+'.)').join(', ')||'–'}</div>
+    <div>Feiertag ohne Arbeit<select data-k="holidayPaid"><option value="" ${!s.holidayPaid?'selected':''}>freier Tag, nicht bezahlt</option><option value="1" ${s.holidayPaid?'selected':''}>bezahlt mit Soll-Stunden</option></select></div>
+    <div class="muted" style="font-size:13px;display:block;line-height:1.6">Arbeit an Feiertagen und Sonntagen wird in der Monatsansicht für den Zuschlag zusammengezählt.<br>${new Date().getFullYear()}: ${Object.entries(holidaysOf(new Date().getFullYear())).map(([d,n])=>esc(n)+' ('+d.slice(8)+'.'+d.slice(5,7)+'.)').join(', ')||'–'}</div>
     ${(s.holidays||[]).slice().sort((a,b)=>a.date.localeCompare(b.date)).map(h=>`<div><span>${dlbl(h.date)} · ${esc(h.name)}</span><button class="btn small danger" data-del="${h.date}">Entfernen</button></div>`).join('')}
     <div class="wide"><input type="date" id="hd" style="width:auto;flex:1;text-align:left"><input id="hn" placeholder="Eigener Feiertag" style="width:auto;flex:2;text-align:left"><button class="btn small" id="hadd">Hinzufügen</button></div></div>
    <div class="sec"><span>Darstellung</span></div><div class="list">
@@ -516,7 +517,7 @@ function vEinst(){
     <div><span>Passwort ändern</span><button class="btn small" id="pw">Ändern</button></div>
     <div><span>Abmelden</span><button class="btn small danger" id="logout">Abmelden</button></div></div>
   </div>`;
-  M.querySelectorAll('[data-k]').forEach(i=>i.onchange=()=>{const k=i.dataset.k;s[k]=i.type==='number'?parseFloat(i.value)||0:i.value;saveSettings();if(k==='holidayState')render()});
+  M.querySelectorAll('[data-k]').forEach(i=>i.onchange=()=>{const k=i.dataset.k;s[k]=i.type==='number'?parseFloat(i.value)||0:i.value;saveSettings();if(k==='holidayState'||k==='holidayPaid')render()});
   M.querySelectorAll('[data-delrate]').forEach(b=>b.onclick=()=>{if(confirm('Diesen Stundenlohn entfernen?')){s.rates=s.rates.filter(r=>r.from!==b.dataset.delrate);saveSettings();render()}});
   M.querySelector('#radd').onclick=()=>{const d=M.querySelector('#rd').value,v=parseFloat(M.querySelector('#rv').value);if(!d||!v)return toast('Bitte Datum und Stundenlohn eingeben');s.rates=s.rates.filter(r=>r.from!==d);s.rates.push({from:d,rate:v});saveSettings();render()};
   M.querySelectorAll('[data-wd]').forEach(b=>b.onclick=()=>{const d=+b.dataset.wd;s.workdays=s.workdays.includes(d)?s.workdays.filter(x=>x!==d):[...s.workdays,d];saveSettings();render()});
