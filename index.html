@@ -168,6 +168,10 @@ main{flex:1;min-width:0;padding-bottom:40px}
 .entry .tag{display:inline-block;font-size:11px;font-weight:600;padding:0 7px;border-radius:99px;border:1px solid var(--hol);color:var(--hol);margin-left:6px;vertical-align:1px}
 .entry .note{font-size:13.5px;margin-top:5px;white-space:pre-wrap;overflow-wrap:anywhere}
 .entry .h{font-weight:700;font-size:16px;white-space:nowrap}
+details.grp>summary{list-style:none}details.grp>summary::-webkit-details-marker{display:none}
+.grpmore{color:var(--acc);font-weight:600}.grpmore::after{content:" ▾"}details.grp[open] .grpmore::after{content:" ▴"}
+details.grp[open] .grpmore{font-size:0}details.grp[open] .grpmore::before{content:"einklappen";font-size:13px}
+.grpl{margin:0 0 10px 14px;padding-left:10px;border-left:2px solid var(--line)}
 .empty{text-align:center;color:var(--mut);padding:32px 12px;border:1.5px dashed var(--line);border-radius:var(--r)}
 
 /* Monate */
@@ -597,6 +601,17 @@ function entryHtml(e){
   return `<button class="entry ${e.type}" data-id="${esc(e.id)}"><span class="stripe"></span><span class="body"><div class="t">${e.type}${e.type==='Arbeit'&&sfName(e.date)?`<span class="tag">${esc(sfName(e.date))}</span>`:''}</div><div class="s num">${esc(line)}</div>${e.note?`<div class="note">${esc(e.note)}</div>`:''}</span><span class="h num">${fmt(hours(e))} h</span></button>`;
 }
 const holidayHtml=d=>`<div class="entry Feiertag"><span class="stripe"></span><span class="body"><div class="t">Feiertag</div><div class="s">${esc(isHoliday(d))}</div></span><span class="h num">${DB.settings.holidayPaid?fmt(DB.settings.dailySoll)+' h':'frei'}</span></div>`;
+// Urlaub/Krankheit zu Blöcken bündeln (Vorgabe vom 12.11.2026): Tage gehören zusammen, wenn dazwischen nur Samstag, Sonntag oder Feiertage liegen.
+function absGroups(list){const a=list.slice().sort((x,y)=>x.date.localeCompare(y.date)),gs=[];
+  a.forEach(e=>{const g=gs[gs.length-1];if(g){let ok=true;const d=parseIso(g[g.length-1].date);d.setDate(d.getDate()+1);
+      for(;iso(d)<e.date;d.setDate(d.getDate()+1)){const w=d.getDay();if(w!==0&&w!==6&&!isHoliday(iso(d))){ok=false;break}}
+      if(ok){g.push(e);return}}
+    gs.push([e])});
+  return gs.reverse()}
+function absGroupHtml(g){const days=new Set(g.map(e=>e.date)).size,h=g.reduce((a,e)=>a+hours(e),0),t=g[0].type,rs=[...new Set(g.map(e=>e.reason||'Ganzer Tag'))];
+  return `<div class="muted" style="font-size:12.5px;margin:10px 4px 4px">${dlbl(g[0].date)} – ${dlbl(g[g.length-1].date)}</div>
+  <details class="grp"><summary class="entry ${t}"><span class="stripe"></span><span class="body"><div class="t">${t} · ${days} ${days===1?'Tag':'Tage'}</div><div class="s">${rs.length===1?esc(rs[0])+' · ':''}<span class="grpmore">einzelne Tage zeigen</span></div></span><span class="h num">${fmt(h)} h</span></summary>
+  <div class="grpl">${g.map(e=>`<div class="muted" style="font-size:12.5px;margin:8px 4px 4px">${dlbl(e.date)}</div>${entryHtml(e)}`).join('')}</div></details>`}
 function bindEntries(){M.querySelectorAll('button.entry').forEach(el=>el.onclick=()=>editEntry(DB.entries.find(e=>e.id===el.dataset.id)));}
 
 // ---------- Heute-Leiste ----------
@@ -840,7 +855,7 @@ function vAuswertung(){
       if(type==='Urlaub'&&s.vacationPerYear){const carry=+((s.vacationCarry||{})[y]||0);const rest=s.vacationPerYear+carry-n;
         head=`<div class="sec"><span>${y}</span></div><div class="card vac"><div class="hero" style="margin:0"><div><div class="muted" style="font-size:13px">Resturlaub</div><div class="big num">${fmt(rest)} Tage</div></div>
         <div class="muted num" style="font-size:13px;text-align:right;line-height:1.9">Anspruch ${fmt(s.vacationPerYear)}<br>Übertrag <input type="number" step="0.5" data-carry="${y}" value="${carry}" style="width:64px;min-height:28px;padding:2px 6px;text-align:right"><br>Genommen ${n}</div></div></div>`;}
-      return head+(l.map(e=>`<div class="muted" style="font-size:12.5px;margin:10px 4px 4px">${dlbl(e.date)}</div>${entryHtml(e)}`).join('')||'<div class="empty">Keine Einträge.</div>')}).join('');
+      return head+(absGroups(l).map(g=>g.length===1?`<div class="muted" style="font-size:12.5px;margin:10px 4px 4px">${dlbl(g[0].date)}</div>${entryHtml(g[0])}`:absGroupHtml(g)).join('')||'<div class="empty">Keine Einträge.</div>')}).join('');
   }
   M.innerHTML=topBar('Auswertung')+`<div class="wrap"><div class="tabs noprint">${[['ueber','Überstunden'],['jahre','Jahre'],['urlaub','Urlaub'],['krank','Krankheit'],['rb','Rufbereitschaft']].map(([k,l])=>`<button data-t="${k}" class="${tab===k?'on':''}">${l}</button>`).join('')}</div>${body}</div>`;
   M.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render()});
