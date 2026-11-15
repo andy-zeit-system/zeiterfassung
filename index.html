@@ -173,6 +173,8 @@ main{flex:1;min-width:0;padding-bottom:40px}
 .areabox .sublbl{font-size:12.5px;color:var(--mut);font-weight:500}
 .areabox .subgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:0 10px}
 .areabox .subgrid.B{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.areabox .trow{display:grid;grid-template-columns:62px repeat(3,minmax(0,1fr));align-items:center;gap:0 8px}
+.areabox .trow .tg{font-size:12.5px;color:var(--mut)}
 .entry .note{font-size:13.5px;margin-top:5px;white-space:pre-wrap;overflow-wrap:anywhere}
 .entry .h{font-weight:700;font-size:16px;white-space:nowrap}
 details.grp>summary{list-style:none}details.grp>summary::-webkit-details-marker{display:none}
@@ -539,9 +541,17 @@ const AREAS=[['B','Büro'],['T','Touren']];
 const areaOf=id=>{const k=(DB.settings.areas||{})[id];return AREAS.some(a=>a[0]===k)?k:''};
 const areaLabel=k=>(AREAS.find(a=>a[0]===k)||[])[1]||'';
 // Unterauswahl je Bereich (Vorgabe vom 15.11.2026), freiwillig, höchstens eine: Büro → Tagespflege/Praxisanleitung, Touren → Tour-Kürzel. Gespeichert in settings.codes je Eintrags-ID.
-const SUBS={B:[['TP','Tagespflege'],['PA','Praxisanleitung']],T:[['F2','F2'],['F3','F3'],['F8','F8'],['M1','M1'],['M2','M2'],['S2','S2'],['S3','S3'],['T1','T1'],['37,3','37,3']]};
-const codeOf=id=>{const c=(DB.settings.codes||{})[id],a=areaOf(id);return a&&(SUBS[a]||[]).some(x=>x[0]===c)?c:''};
-const codeLabel=(a,c)=>((SUBS[a]||[]).find(x=>x[0]===c)||[])[1]||'';
+const SUBS={B:[['TP','Tagespflege'],['PA','Praxisanleitung']],T:[['F2','F2'],['F3','F3'],['F8','F8'],['S2','S2'],['S3','S3'],['M1','M1'],['M2','M2'],['T1','T1'],['T2','T2'],['37,3','37,3']]};
+// Touren-Kürzel (Vorgabe vom 15.11.2026): eine Früh- ODER Spätschicht (F…/S…) darf mit einer Mittagsschicht (M…) kombiniert werden.
+// F und S nie zusammen, je Gruppe nur eins; T1, T2 und 37,3 stehen immer allein. Gespeichert als "F3/M1".
+const TGROUPS=[['Früh',['F2','F3','F8']],['Spät',['S2','S3']],['Mittag',['M1','M2']],['Sonstige',['T1','T2','37,3']]];
+const codeGroup=c=>/^[FS]\d/.test(c)?'FS':/^M\d/.test(c)?'M':'X';
+function codeToggle(list,c,on){let l=list.filter(x=>x!==c); if(!on) return l;
+  const g=codeGroup(c); if(g==='X') return [c];
+  l=l.filter(x=>codeGroup(x)!=='X'&&codeGroup(x)!==g); l.push(c);
+  return l.sort((a,b)=>(codeGroup(a)==='M')-(codeGroup(b)==='M'));}
+const codeOf=id=>{const c=(DB.settings.codes||{})[id],a=areaOf(id);if(!a||!c)return '';const p=String(c).split('/');return p.every(x=>(SUBS[a]||[]).some(y=>y[0]===x))?c:''};
+const codeLabel=(a,c)=>String(c||'').split('/').map(x=>((SUBS[a]||[]).find(y=>y[0]===x)||[])[1]||'').filter(Boolean).join(' + ');
 const RB_KINDS=[['ueb','Rufbereitschaft übernommen'],['voll','Rufbereitschaft'],['abg','Rufbereitschaft abgegeben']];
 const rbLabel=k=>(RB_KINDS.find(x=>x[0]===k)||[])[1]||'';
 const rbOf=d=>{const k=(DB.settings.rb||{})[d];return rbLabel(k)?k:''};
@@ -1052,11 +1062,14 @@ function editEntry(e){
   // Bereich-Kasten: ist Büro oder Touren gewählt, verschwindet das andere und die passende Unterauswahl erscheint
   const areaHtml=()=>`<label>Bereich <span class="req">${area?'':'(Pflicht – bitte eins auswählen)'}</span></label>
      ${AREAS.filter(([k])=>!area||area===k).map(([k,l])=>`<label class="chk"><input type="checkbox" data-area="${k}" ${area===k?'checked':''}><span>${l}</span></label>`).join('')}
-     ${area?`<div class="subs"><div class="sublbl">${area==='B'?'Art (freiwillig, höchstens eine)':'Tour-Kürzel (freiwillig, höchstens eins)'}</div><div class="subgrid ${area}">${SUBS[area].map(([k,l])=>`<label class="chk"><input type="checkbox" data-code="${esc(k)}" ${code===k?'checked':''}><span>${esc(l)}</span></label>`).join('')}</div></div>`:''}`;
+     ${area==='B'?`<div class="subs"><div class="sublbl">Art (freiwillig, höchstens eine)</div><div class="subgrid B">${SUBS.B.map(([k,l])=>`<label class="chk"><input type="checkbox" data-code="${esc(k)}" ${code===k?'checked':''}><span>${esc(l)}</span></label>`).join('')}</div></div>`:''}
+     ${area==='T'?`<div class="subs"><div class="sublbl">Tour-Kürzel (freiwillig) – Früh oder Spät, jeweils mit Mittag kombinierbar; T1, T2 und 37,3 nur allein</div>${TGROUPS.map(([g,ks])=>`<div class="trow"><span class="tg">${g}</span>${ks.map(k=>`<label class="chk"><input type="checkbox" data-code="${esc(k)}" ${code.split('/').includes(k)?'checked':''}><span>${esc(k)}</span></label>`).join('')}</div>`).join('')}</div>`:''}`;
   const bindArea=()=>{const A=F.querySelector('#f_area'); if(!A) return;
     A.querySelectorAll('[data-area]').forEach(c=>c.onchange=()=>{const n=c.checked?c.dataset.area:''; if(n!==area) code=''; area=n; A.innerHTML=areaHtml(); bindArea();
       if(area){A.classList.remove('miss');const W=F.querySelector('#f_warn');if(W.dataset.k==='area'){W.innerHTML='';W.dataset.k=''}}});
-    A.querySelectorAll('[data-code]').forEach(c=>c.onchange=()=>{code=c.checked?c.dataset.code:'';A.querySelectorAll('[data-code]').forEach(o=>o.checked=o.dataset.code===code)});};
+    A.querySelectorAll('[data-code]').forEach(c=>c.onchange=()=>{
+      code=area==='T'?codeToggle(code?code.split('/'):[],c.dataset.code,c.checked).join('/'):(c.checked?c.dataset.code:'');
+      const sel=code?code.split('/'):[]; A.querySelectorAll('[data-code]').forEach(o=>o.checked=sel.includes(o.dataset.code))});};
   // Pausen-Erinnerung (Vorgabe vom 11.11.2026): ab 6 Std. Arbeit am Tag 30 Min., ab 9 Std. 45 Min. – die Grenzwerte selbst zählen schon mit.
   // Gezählt wird der ganze Tag: Pausen aller Arbeitseinträge plus Lücken zwischen ihnen. Nur Erinnerung, kein Zwang.
   const pauseCheck=b=>{const day=DB.entries.filter(x=>x.type==='Arbeit'&&x.date===b.date&&x.id!==b.id).concat([b]).map(x=>{let a=toMin(x.start),z=toMin(x.end);if(z<a)z+=1440;return{a,z,p:+x.pause||0}}).sort((p,q)=>p.a-q.a);
