@@ -166,6 +166,9 @@ main{flex:1;min-width:0;padding-bottom:40px}
 .entry .t{font-weight:600}
 .entry .s{font-size:13px;color:var(--mut)}
 .entry .tag{display:inline-block;font-size:11px;font-weight:600;padding:0 7px;border-radius:99px;border:1px solid var(--hol);color:var(--hol);margin-left:6px;vertical-align:1px}
+.entry .tag.area{border-color:var(--mut);color:var(--mut)}
+.areabox{border:1px solid var(--line);border-radius:10px;padding:4px 12px;margin-bottom:14px}.areabox.miss{border-color:var(--neg)}
+.areabox .req{color:var(--neg);font-weight:600}
 .entry .note{font-size:13.5px;margin-top:5px;white-space:pre-wrap;overflow-wrap:anywhere}
 .entry .h{font-weight:700;font-size:16px;white-space:nowrap}
 details.grp>summary{list-style:none}details.grp>summary::-webkit-details-marker{display:none}
@@ -355,7 +358,7 @@ const IC={
 };
 
 // ---------- Daten ----------
-const DEFAULT_SETTINGS={name:'',company:'',rates:[{from:'2000-01-01',rate:0}],dailySoll:4.98,monthlySoll:0,workdays:[1,2,3,4,5,6],defaultStart:'08:00',defaultEnd:'12:00',defaultPause:0,holidayState:'NI',holidayPaid:'',holidays:[],vacationPerYear:0,vacationCarry:{},overtimeStart:0,overtimeCarry:{},overtimePayout:{},rb:{},rbUeb:2.5,rbUebSoFei:5,rbVoll:5,rbSoFei:10,rbAbg:2.5,rbAbgSoFei:5,startDate:''};
+const DEFAULT_SETTINGS={name:'',company:'',rates:[{from:'2000-01-01',rate:0}],dailySoll:4.98,monthlySoll:0,workdays:[1,2,3,4,5,6],defaultStart:'08:00',defaultEnd:'12:00',defaultPause:0,holidayState:'NI',holidayPaid:'',holidays:[],vacationPerYear:0,vacationCarry:{},overtimeStart:0,overtimeCarry:{},overtimePayout:{},areas:{},rb:{},rbUeb:2.5,rbUebSoFei:5,rbVoll:5,rbSoFei:10,rbAbg:2.5,rbAbgSoFei:5,startDate:''};
 let DB={settings:{...DEFAULT_SETTINGS},entries:[]}, USER=null, lastFetch=0;
 const cacheKey=()=>'zeit.cache.'+(USER&&USER.id);
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));
@@ -481,6 +484,7 @@ async function saveEntries(list){
 async function deleteEntry(id){
   const gone=DB.entries.find(x=>x.id===id);
   DB.entries=DB.entries.filter(x=>x.id!==id); if(gone)rbClearIfEmpty(gone.date);
+  if((DB.settings.areas||{})[id]){const o={...DB.settings.areas};delete o[id];DB.settings.areas=o;saveSettings()}
   PEND.entries[id]={op:'del',v:opVer()}; pendSave(); cacheSave(); render();
   toast(await flush()?'Gelöscht':'Gelöscht – wird an den Server gesendet, sobald Internet da ist');
 }
@@ -526,6 +530,10 @@ const isHoliday=s=>holidaysOf(+s.slice(0,4))[s]||((DB.settings.holidays||[]).fin
 const sfName=s=>isHoliday(s)||(parseIso(s).getDay()===0?'Sonntag':'');
 // Rufbereitschaft: je Tag höchstens eine Art, gespeichert in den Einstellungen (settings.rb = {'JJJJ-MM-TT': 'ueb'|'voll'|'abg'}).
 // Sätze: übernommen 2,50 € (Sonn-/Feiertag 5 €), voll 5 € (Sonn-/Feiertag 10 €), abgegeben 2,50 € (Sonn-/Feiertag 5 €) – in den Einstellungen änderbar.
+// Bereich je Arbeitseintrag (Vorgabe vom 15.11.2026): Büro oder Touren, Pflicht. Gespeichert je Eintrags-ID in den Einstellungen (settings.areas), wie die Rufbereitschaft.
+const AREAS=[['B','Büro'],['T','Touren']];
+const areaOf=id=>{const k=(DB.settings.areas||{})[id];return AREAS.some(a=>a[0]===k)?k:''};
+const areaLabel=k=>(AREAS.find(a=>a[0]===k)||[])[1]||'';
 const RB_KINDS=[['ueb','Rufbereitschaft übernommen'],['voll','Rufbereitschaft'],['abg','Rufbereitschaft abgegeben']];
 const rbLabel=k=>(RB_KINDS.find(x=>x[0]===k)||[])[1]||'';
 const rbOf=d=>{const k=(DB.settings.rb||{})[d];return rbLabel(k)?k:''};
@@ -600,7 +608,7 @@ function render(){
 
 function entryHtml(e){
   const line=e.type==='Arbeit'?`${e.start} – ${e.end}${e.pause?' · Pause '+pauseLbl(e.pause):''}`:(e.reason||'Ganzer Tag');
-  return `<button class="entry ${e.type}" data-id="${esc(e.id)}"><span class="stripe"></span><span class="body"><div class="t">${e.type}${e.type==='Arbeit'&&sfName(e.date)?`<span class="tag">${esc(sfName(e.date))}</span>`:''}</div><div class="s num">${esc(line)}</div>${e.note?`<div class="note">${esc(e.note)}</div>`:''}</span><span class="h num">${fmt(hours(e))} h</span></button>`;
+  return `<button class="entry ${e.type}" data-id="${esc(e.id)}"><span class="stripe"></span><span class="body"><div class="t">${e.type}${e.type==='Arbeit'&&areaOf(e.id)?`<span class="tag area ${areaOf(e.id)}">${areaLabel(areaOf(e.id))}</span>`:''}${e.type==='Arbeit'&&sfName(e.date)?`<span class="tag">${esc(sfName(e.date))}</span>`:''}</div><div class="s num">${esc(line)}</div>${e.note?`<div class="note">${esc(e.note)}</div>`:''}</span><span class="h num">${fmt(hours(e))} h</span></button>`;
 }
 const holidayHtml=d=>`<div class="entry Feiertag"><span class="stripe"></span><span class="body"><div class="t">Feiertag</div><div class="s">${esc(isHoliday(d))}</div></span><span class="h num">${DB.settings.holidayPaid?fmt(DB.settings.dailySoll)+' h':'frei'}</span></div>`;
 // Urlaub/Krankheit zu Blöcken bündeln (Vorgabe vom 12.11.2026): Tage gehören zusammen, wenn dazwischen nur Samstag, Sonntag oder Feiertage liegen.
@@ -1023,8 +1031,8 @@ document.getElementById('fileIn').onchange=async ev=>{
 };
 function download(text,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
 function downloadCsv(list,name){
-  const rows=[['Datum','Wochentag','Art','Beginn','Ende','Pause (Min.)','Stunden','Grund','Beschreibung']];
-  list.slice().sort((a,b)=>a.date.localeCompare(b.date)||(a.start||'').localeCompare(b.start||'')).forEach(e=>rows.push([e.date.split('-').reverse().join('.'),WD[parseIso(e.date).getDay()],e.type,e.start||'',e.end||'',e.pause||'',fmt(hours(e)),e.reason||'',e.note||'']));
+  const rows=[['Datum','Wochentag','Art','Bereich','Beginn','Ende','Pause (Min.)','Stunden','Grund','Beschreibung']];
+  list.slice().sort((a,b)=>a.date.localeCompare(b.date)||(a.start||'').localeCompare(b.start||'')).forEach(e=>rows.push([e.date.split('-').reverse().join('.'),WD[parseIso(e.date).getDay()],e.type,e.type==='Arbeit'?areaLabel(areaOf(e.id)):'',e.start||'',e.end||'',e.pause||'',fmt(hours(e)),e.reason||'',e.note||'']));
   download('﻿'+rows.map(r=>r.map(c=>{let v=String(c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return `"${v.replace(/"/g,'""')}"`}).join(';')).join('\r\n'),name,'text/csv');
 }
 
@@ -1032,7 +1040,7 @@ function downloadCsv(list,name){
 function editEntry(e){
   const s=DB.settings; const isNew=!e;
   e=e?{...e}:{id:uid(),date:selDate,type:'Arbeit',start:s.defaultStart,end:s.defaultEnd,pause:s.defaultPause,note:''};
-  const origDate=e.date; let rb=rbOf(e.date); let ackPause=false;
+  const origDate=e.date; let rb=rbOf(e.date); let ackPause=false; let area=isNew?'':areaOf(e.id);
   // Pausen-Erinnerung (Vorgabe vom 11.11.2026): ab 6 Std. Arbeit am Tag 30 Min., ab 9 Std. 45 Min. – die Grenzwerte selbst zählen schon mit.
   // Gezählt wird der ganze Tag: Pausen aller Arbeitseinträge plus Lücken zwischen ihnen. Nur Erinnerung, kein Zwang.
   const pauseCheck=b=>{const day=DB.entries.filter(x=>x.type==='Arbeit'&&x.date===b.date&&x.id!==b.id).concat([b]).map(x=>{let a=toMin(x.start),z=toMin(x.end);if(z<a)z+=1440;return{a,z,p:+x.pause||0}}).sort((p,q)=>p.a-q.a);
@@ -1063,6 +1071,8 @@ function editEntry(e){
      ${!work&&isNew?`<div><label for="f_to">Bis</label><input type="date" id="f_to" value="${e._to||e.date}"></div>`:''}</div>
     ${work?`<div class="grid g3"><div><label for="f_start">Beginn</label><input type="time" id="f_start" value="${e.start}" required></div><div><label for="f_end">Ende</label><input type="time" id="f_end" value="${e.end}" required></div><div><label for="f_pause">Pause (Min.)</label><input type="number" inputmode="numeric" id="f_pause" min="0" step="5" value="${e.pause||0}"></div></div>`
      :`<div class="grid g2"><div><label for="f_hours">Stunden pro Tag</label><input type="number" inputmode="decimal" step="0.01" id="f_hours" value="${e.hours??s.dailySoll}"></div><div><label for="f_reason">Grund</label><input id="f_reason" value="${esc(e.reason||(e.type==='Urlaub'?'Ganzer Tag':''))}"></div></div>`}
+    ${work?`<div role="group" aria-label="Bereich" class="areabox" id="f_area"><label>Bereich <span class="req">(Pflicht – bitte eins auswählen)</span></label>
+     ${AREAS.map(([k,l])=>`<label class="chk"><input type="checkbox" data-area="${k}" ${area===k?'checked':''}><span>${l}</span></label>`).join('')}</div>`:''}
     ${work?`<div role="group" aria-label="Rufbereitschaft an diesem Tag"><label>Rufbereitschaft an diesem Tag (höchstens eine Auswahl)</label>
      ${RB_KINDS.map(([k,l])=>`<label class="chk"><input type="checkbox" data-rb="${k}" ${rb===k?'checked':''}><span>${l}</span><span class="muted num" data-rbp="${k}"></span></label>`).join('')}</div>`:''}
     <div><div class="lblrow"><label for="f_note">Beschreibung</label>${SR?`<button type="button" class="btn small mic" id="f_mic" aria-pressed="false">${MIC}<span>Diktieren</span></button>`:''}</div><textarea id="f_note" rows="3" maxlength="1000" style="resize:vertical" placeholder="Optional">${esc(e.note)}</textarea></div>
@@ -1075,6 +1085,8 @@ function editEntry(e){
     const mic=F.querySelector('#f_mic'); if(mic) mic.onclick=()=>{if(micOn){micStop();micShow();return} micOn=true;try{micStart()}catch(x){micOn=false;rec=null;toast('Spracherkennung konnte nicht starten')}micShow()};
     const del=F.querySelector('#f_del'); if(del) del.onclick=()=>{if(confirm('Eintrag wirklich löschen?')){D.close();deleteEntry(e.id)}};
     // Nur eine der drei Rufbereitschafts-Arten kann gewählt sein; ein zweiter Klick auf die gewählte nimmt sie wieder heraus.
+    // Büro oder Touren: genau eins (zweiter Klick nimmt es wieder heraus, dann lässt sich nicht speichern)
+    F.querySelectorAll('[data-area]').forEach(c=>c.onchange=()=>{area=c.checked?c.dataset.area:'';F.querySelectorAll('[data-area]').forEach(o=>o.checked=o.dataset.area===area);if(area){F.querySelector('#f_area').classList.remove('miss');const W=F.querySelector('#f_warn');if(W.dataset.k==='area'){W.innerHTML='';W.dataset.k=''}}});
     F.querySelectorAll('[data-rb]').forEach(c=>c.onchange=()=>{rb=c.checked?c.dataset.rb:'';F.querySelectorAll('[data-rb]').forEach(o=>o.checked=o.dataset.rb===rb)});
     const upd=()=>{read();const el=F.querySelector('#f_sum');
       F.querySelectorAll('[data-rbp]').forEach(p=>p.textContent=eur(rbPrice(p.dataset.rbp,e.date)));
@@ -1090,6 +1102,9 @@ function editEntry(e){
   F.onsubmit=ev=>{ev.preventDefault();read();
     const base={...e}; delete base._to;
     if(base.type==='Arbeit'&&(!base.start||!base.end)) return toast('Bitte Beginn und Ende angeben');
+    if(base.type==='Arbeit'&&!area){const W=F.querySelector('#f_warn');W.dataset.k='area';
+      W.innerHTML='<div class="warn"><b>Büro oder Touren?</b><br>Bitte oben auswählen, ob dieser Eintrag zur Büro- oder zur Touren-Zeiterfassung gehört. Ohne Auswahl lässt sich der Eintrag nicht speichern – sonst „Abbrechen“.</div>';
+      const A=F.querySelector('#f_area');A.classList.add('miss');A.scrollIntoView({block:'nearest'});return}
     const pw=base.type==='Arbeit'&&!ackPause?pauseCheck(base):null;
     if(pw){const W=F.querySelector('#f_warn');
       W.innerHTML=`<div class="warn"><b>Gesetzliche Pause beachten</b><br>An diesem Tag sind ${hmin(pw.work/60)} Stunden Arbeit eingetragen. Ab ${pw.need===45?9:6} Stunden sind ${pw.need} Minuten Pause vorgeschrieben, eingetragen sind ${pw.pause} Minuten${pw.n>1?' (Pausen und Lücken zwischen den Einträgen des Tages mitgezählt)':''}.
@@ -1104,6 +1119,8 @@ function editEntry(e){
       if(!changed.length) return toast('Keine Arbeitstage im Zeitraum');
       DB.entries.push(...changed);
     } else { const i=DB.entries.findIndex(x=>x.id===base.id); if(i>=0)DB.entries[i]=base; else DB.entries.push(base); changed=[base]; }
+    {const a={...(s.areas||{})}; if(base.type==='Arbeit'&&area)a[base.id]=area; else delete a[base.id];
+      if(JSON.stringify(a)!==JSON.stringify(s.areas||{})){s.areas=a;saveSettings()}}
     if(base.type==='Arbeit'){const o={...(s.rb||{})}; if(rb)o[base.date]=rb; else delete o[base.date];
       if(origDate!==base.date&&!DB.entries.some(x=>x.date===origDate)) delete o[origDate];
       if(JSON.stringify(o)!==JSON.stringify(s.rb||{})){s.rb=o;saveSettings()}}
